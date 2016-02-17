@@ -1,0 +1,56 @@
+# Used to read Common Crawl's WARC files
+warc==0.2.1
+
+# Used for reading WARC (gziped) files as a stream
+-e git+git://github.com/commoncrawl/gzipstream.git@59fa1e1e31e5278dc11586f7519392212dbd2549#egg=gzipstream
+
+# Used for indexing
+elasticsearch==2.2.0
+
+# Used for tests
+pytest==2.8.7
+
+# Extract top-level domain names with the public suffix list
+tldextract==1.7.5
+
+# Fast hash function for generating document IDs
+mmh3==2.3.1
+
+# Popular Python module for HTTP requests.
+requests==2.9.1
+
+# Used to write & read data files from disk in URLServer
+pyrocksdb==0.4
+
+# Optimized JSON module
+ujson==1.35
+
+# Used for linting Python code
+pylint==1.5.4
+
+# Used to detect language from pages
+cld2-cffi==0.1.1
+
+# Used to map charsets coming from the web to valid Python charsets
+webencodings==0.4
+
+# Used for RPC with URLServer. Something more performant (but more complex) will be used in the future
+mprpc==0.1.10
+
+# Used as a fallback to detect character encodings when they are not explicitly defined
+cchardet==1.0.0
+
+# Used to parse HTTP headers/bodies from WARC files
+http_parser==0.8.3
+
+# Gumbo binding for HTML parsing
+-e git+git://github.com/commonsearch/gumbocy.git@207653489c54e48ba464fb14bc59765d35dd41c2#egg=gumbocy
+
+# Used for performance improvements
+Cython==0.23.4
+
+# Used to interact with AWS
+boto==2.39.0
+
+# Used in URLServer to serve requests in parallel
+gevent==1.1rc3

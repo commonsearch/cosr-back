@@ -1,0 +1,5 @@
+build
+local-data
+venv
+venv-pypy
+.git

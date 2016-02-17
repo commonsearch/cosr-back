@@ -1,0 +1,11 @@
+/local-data
+/venv
+/venv-pypy
+.DS_Store
+/prof
+/spark
+/build
+/.cache
+/src
+*.pyc
+__pycache__

@@ -1,0 +1,1 @@
+This directory contains samples of static data for use in the tests.

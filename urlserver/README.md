@@ -1,0 +1,1 @@
+The URL Server is a service that accepts URLs and reponds with their metadata from static DBs.

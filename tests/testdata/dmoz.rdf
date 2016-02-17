@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RDF xmlns:r="http://www.w3.org/TR/RDF/" xmlns:d="http://purl.org/dc/elements/1.0/" xmlns="http://dmoz.org/rdf/">
+  <!-- Generated at 2016-01-31 00:05:31 EST from DMOZ 2.0 -->
+  <Topic r:id="">
+    <catid>1</catid>
+  </Topic>
+  <Topic r:id="Top/Arts">
+    <catid>381773</catid>
+  </Topic>
+  <Topic r:id="Top/Arts/Animation">
+    <catid>423945</catid>
+    <link1 r:resource="http://www.awn.com/"></link1>
+    <link r:resource="http://animation.about.com/"></link>
+    <link r:resource="http://www.toonhound.com/"></link>
+    <link r:resource="http://www.digitalmediafx.com/Features/animationhistory.html"></link>
+    <link r:resource="http://www.animated-divots.net/"></link>
+  </Topic>
+  <ExternalPage about="http://www.awn.com/">
+    <d:Title>Animation World Network</d:Title>
+    <d:Description>Provides information resources to the international animation community. Features include searchable database archives, monthly magazine, web animation guide, the Animation Village, discussion forums and other useful resources.</d:Description>
+    <priority>1</priority>
+    <topic>Top/Arts/Animation</topic>
+  </ExternalPage>
+  <ExternalPage about="http://animation.about.com/">
+    <d:Title>About.com: Animation Guide</d:Title>
+    <d:Description>Keep up with developments in online animation for all skill levels. Download tools, and seek inspiration from online work.</d:Description>
+    <topic>Top/Arts/Animation</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.toonhound.com/">
+    <d:Title>Toonhound</d:Title>
+    <d:Description>British cartoon, animation and comic strip creations - links, reviews and news from the UK.</d:Description>
+    <topic>Top/Arts/Animation</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.digitalmediafx.com/Features/animationhistory.html">
+    <d:Title>Digital Media FX: The History of Animation</d:Title>
+    <d:Description>Michael Crandol takes an exhaustive look at the history of animation and animators/visionaries like Max Fleisher, Walter Lantz, and Otto Messmer.</d:Description>
+    <topic>Top/Arts/Animation</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.animated-divots.net/">
+    <d:Title>Richard's Animated Divots</d:Title>
+    <d:Description>Chronology of animated movies, television programs, and short cartoons. Includes animation filmographies and a list of anime television series.</d:Description>
+    <topic>Top/Arts/Animation</topic>
+  </ExternalPage>
+  <Topic r:id="Top/Arts/Animation/Anime">
+    <catid>425085</catid>
+  </Topic>
+  <Topic r:id="Top/Arts/Animation/Anime/Characters">
+    <catid>425147</catid>
+    <link r:resource="http://www.angelfire.com/anime2/ninisbishonen/"></link>
+    <link r:resource="http://www.angelfire.com/anime2/bestanimecharacters/"></link>
+    <link r:resource="http://valleyofazure.tripod.com/"></link>
+    <link r:resource="http://www.angelfire.com/nv/neko/"></link>
+    <link r:resource="http://www.angelfire.com/grrl/magicshoppe2/"></link>
+    <link r:resource="http://shotani.www2.50megs.com/animen_uno.html"></link>
+  </Topic>
+  <ExternalPage about="http://www.angelfire.com/anime2/ninisbishonen/">
+    <d:Title>Nini's Bishonen Dungeon</d:Title>
+    <d:Description>Shrines to Vega, Taiki, Dilandau, and Tiger Eye, as well as fan art, adoptions, and links.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Characters</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.angelfire.com/anime2/bestanimecharacters/">
+    <d:Title>Site for Liz's Anime Favorites</d:Title>
+    <d:Description>Shrines to Duo, Ryoko, Shampoo, Katy the Kitty, Lady Une, Mimete, Junjun, Parapara, and Sailor Saturn with images, profiles, and links.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Characters</topic>
+  </ExternalPage>
+  <ExternalPage about="http://valleyofazure.tripod.com/">
+    <d:Title>Azure Valley</d:Title>
+    <d:Description>Dedicated to anthropomorphic characters. Fan art, images, profiles, and links.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Characters</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.angelfire.com/nv/neko/">
+    <d:Title>Neko Central</d:Title>
+    <d:Description>Image galleries, descriptions, information, and media on cats from different series.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Characters</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.angelfire.com/grrl/magicshoppe2/">
+    <d:Title>Chibi Hime's Magic Shoppe 2</d:Title>
+    <d:Description>Shrines to Escaflowne's Dilandau, Final Fantasy's Vincent, SoulTaker's Kyousuke, and Hsi Wu from Jackie Chan Adventures. Includes images, information, and fan fiction.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Characters</topic>
+  </ExternalPage>
+  <ExternalPage about="http://shotani.www2.50megs.com/animen_uno.html">
+    <d:Title>AniMen</d:Title>
+    <d:Description>Features men from Fushigi Yuugi, Sailor Moon, Escaflowne, Rayearth, Gundam Wing, Bubblegum Crisis/AD Police, Tenchi Muyo, Utena, and Ayashi no Ceres. Profiles, commentary, polls, fan fiction, images, downloads, and links.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Characters</topic>
+  </ExternalPage>
+  <Topic r:id="Top/Arts/Animation/Anime/Clubs_and_Organizations">
+    <catid>425148</catid>
+    <link r:resource="http://www.angelfire.com/yt/ahsaa/"></link>
+    <link r:resource="http://www.yale.edu/anime/"></link>
+    <link r:resource="http://www.nnanime.com/"></link>
+    <link r:resource="http://www.unc.edu/coup/"></link>
+    <link r:resource="http://uranime.nekomusume.net/"></link>
+    <link r:resource="http://carleton.ottawa-anime.org/"></link>
+    <link r:resource="http://soap.ottawa-anime.org/"></link>
+    <link r:resource="http://www.jaco.org/"></link>
+    <link r:resource="http://www.yorku.ca/anime/"></link>
+    <link r:resource="http://www.emeraldtokyo.com/"></link>
+    <link r:resource="http://www.neoanime.org/"></link>
+    <link r:resource="http://www.hcs.harvard.edu/~anime/"></link>
+    <link r:resource="http://www.haas-online.net/"></link>
+    <link r:resource="http://www.umich.edu/~animania/"></link>
+    <link r:resource="http://animeclub.org/"></link>
+    <link r:resource="http://groups.yahoo.com/group/goddessofloveandbeauty/"></link>
+    <link r:resource="http://www.bumac.org/"></link>
+    <link r:resource="http://www.indyanime.org/"></link>
+    <link r:resource="http://www.fresnoanime.com/"></link>
+    <link r:resource="http://www.delawareanimesociety.com/"></link>
+    <link r:resource="http://www.ctrl-a.org/"></link>
+    <link r:resource="http://www.stevens.edu/anime/"></link>
+    <link r:resource="http://dcanimeclub.org/"></link>
+    <link r:resource="http://uts.cc.utexas.edu/~anime/"></link>
+    <link r:resource="http://dampfkraft.com/bas/"></link>
+    <link r:resource="http://tech.groups.yahoo.com/group/pin0yotaku/"></link>
+    <link r:resource="http://www.greenmustard.com/"></link>
+    <link r:resource="http://tech.groups.yahoo.com/group/amrc-l/"></link>
+    <link r:resource="http://www.calanimagealpha.com/"></link>
+  </Topic>
+  <ExternalPage about="http://www.angelfire.com/yt/ahsaa/">
+    <d:Title>American High School Anime Association</d:Title>
+    <d:Description>Mission statement, reviews, member area, links, and how to join.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.yale.edu/anime/">
+    <d:Title>Yale Anime Society</d:Title>
+    <d:Description>Society charter, image and MIDI archive, schedule, member list, and links. Yale University, Connecticut, USA.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.nnanime.com/">
+    <d:Title>No-Name Anime Society</d:Title>
+    <d:Description>Information about monthly showings and copies of newsletters. Saratoga, California, USA.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.unc.edu/coup/">
+    <d:Title>Carolina Otaku Uprising</d:Title>
+    <d:Description>General information, showing schedule, kendo club, and links. Chapel Hill, North Carolina, USA.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://uranime.nekomusume.net/">
+    <d:Title>University of Richmond Japanese Anime Club</d:Title>
+    <d:Description>UR Anime is no longer an active organization. However, the history of the club and all anime convention photo galleries are still showcased as a service to the public. Virginia, USA at University of Richmond.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://carleton.ottawa-anime.org/">
+    <d:Title>Anime @ Carleton</d:Title>
+    <d:Description>Includes information about the club, events, constitution, and anime facts. Ottawa, Ontario, Canada.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://soap.ottawa-anime.org/">
+    <d:Title>Society for Ottawa Anime Promotion</d:Title>
+    <d:Description>Events, news, forum, and newsletter. Ontario, Canada.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.jaco.org/">
+    <d:Title>Japanese Animation Club of Orlando</d:Title>
+    <d:Description>Schedule, news, staff profiles, and photos. Orlando, Florida, USA at University of Central Florida.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.yorku.ca/anime/">
+    <d:Title>York University Anime and Manga Association (YAMA)</d:Title>
+    <d:Description>Events, club information, library, news, fan art, chat, and links. York University, Canada.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.emeraldtokyo.com/">
+    <d:Title>Emerald Tokyo Entertainment</d:Title>
+    <d:Description>Forum, membership information, news, art work, and links. Greenville, South Carolina, USA.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.neoanime.org/">
+    <d:Title>Neo Anime Club</d:Title>
+    <d:Description>News, message boards, contact details, and mailing list. Pomona, California, USA at California State Polytechnic University.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.hcs.harvard.edu/~anime/">
+    <d:Title>Harvard Anime Society</d:Title>
+    <d:Description>Information, news, officer list, library, links, and schedule. Cambridge, Massachusetts, USA at Harvard University.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.haas-online.net/">
+    <d:Title>Huntsville Alabama Anime Society</d:Title>
+    <d:Description>Fan works, links, events and member list. Huntsville, Alabama, USA.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.umich.edu/~animania/">
+    <d:Title>University of Michigan's Animania</d:Title>
+    <d:Description>List of screenings, a few MP3s, and series information. [Ann Arbor, Michigan, USA at University of Michigan.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://animeclub.org/">
+    <d:Title>Northern Virginia Anime Association</d:Title>
+    <d:Description>Forum, officers, schedule, directions, contacts, and links. Fairfax, Virginia, USA.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://groups.yahoo.com/group/goddessofloveandbeauty/">
+    <d:Title>Goddess of Love and Beauty Group</d:Title>
+    <d:Description>Yahoo Group for general shoujo anime and manga discussions.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+  <ExternalPage about="http://www.bumac.org/">
+    <d:Title>Bloomsburg University Manga and Anime Club</d:Title>
+    <d:Description>Contains group information, news, meetings, member list, contact details, and links. Bloomsburg, Pennsylvania, USA.</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+
+  <ExternalPage about="http://google.com/">
+    <d:Title>Google</d:Title>
+    <d:Description>Search Engine</d:Description>
+    <topic>Top/Arts/Animation/Anime/Clubs_and_Organizations</topic>
+  </ExternalPage>
+
+</RDF>
