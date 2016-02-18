@@ -6,7 +6,7 @@ services:
 before_install:
   - docker pull commonsearch/local-elasticsearch
   - docker pull commonsearch/local-back
-  - start_services
+  - make start_services
 
 script:
   - make docker_test
