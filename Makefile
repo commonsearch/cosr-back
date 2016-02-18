@@ -103,7 +103,7 @@ test: import_local_testdata
 	PYTHONDONTWRITEBYTECODE=1 py.test tests -v
 
 docker_test:
-	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
+	docker run -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
 
 pylint:
 	PYTHONPATH=. pylint cosrlib urlserver jobs
