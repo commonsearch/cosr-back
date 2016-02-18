@@ -12,6 +12,7 @@ before_install:
   - docker version
   - ps -ef
   - netstat -lpn
+  - curl "http://127.0.0.1:39200"
 
 script:
   - make docker_test
