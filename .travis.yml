@@ -12,8 +12,9 @@ before_install:
   - docker version
   - ps -ef
   - netstat -lpn
+  - docker run commonsearch/local-back ip route show 0.0.0.0/0
   - curl "http://127.0.0.1:39200"
-  - docker run -p 127.0.0.1:9200:39200 commonsearch/local-back curl "http://127.0.0.1:39200"
+  - docker run -e COSR_ELASTICSEARCHTEXT commonsearch/local-back curl $COSR_ELASTICSEARCHTEXT
 
 script:
   - make docker_test
