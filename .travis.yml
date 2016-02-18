@@ -5,8 +5,13 @@ services:
 
 before_install:
   - docker pull commonsearch/local-elasticsearch
+  - docker run -d -p 127.0.0.1:39200:9200 -p 127.0.0.1:39300:9300 commonsearch/local-elasticsearch
   - docker pull commonsearch/local-back
-  - make start_services
+  - docker ps
+  - docker info
+  - docker version
+  - ps -ef
+  - netstat -lpn
 
 script:
   - make docker_test
