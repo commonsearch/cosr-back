@@ -27,7 +27,7 @@ import_local_data:
 	python scripts/import_dmoz.py
 	python scripts/import_webdatacommons_hc.py
 	python scripts/import_ut1_blacklist.py
-	./scripts/import_commoncrawl.sh 0
+	if [ -z "$(COSR_TESTDATA)" ]; then ./scripts/import_commoncrawl.sh 0; fi
 
 # Imports local mock data from tests
 import_local_testdata:
@@ -99,8 +99,11 @@ reindex10:
 #
 
 # Runs all the tests
-test:
+test: import_local_testdata
 	PYTHONDONTWRITEBYTECODE=1 py.test tests -v
+
+docker_test:
+	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
 
 pylint:
 	PYTHONPATH=. pylint cosrlib urlserver jobs

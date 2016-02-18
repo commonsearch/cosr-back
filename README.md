@@ -24,16 +24,30 @@ You will enter the main container with the ability to run the tests or launch Sp
 
 ## Launching the tests
 
-Only once, you need to import some mock data:
+Make sure to start the services (`make start_services`) before trying any tests.
 
-```
-make import_local_testdata
-```
-
-Then you can run our full test suite:
+Inside Docker, you can run our full test suite easily:
 
 ```
 make test
+```
+
+Alternatively, you can run it from outside Docker with:
+
+```
+make docker_test
+```
+
+You may also want to run only part of the tests, for instance all which do not use Elasticsearch:
+
+```
+py.test tests/ -v -m "not elasticsearch"
+```
+
+If you want to evaluate the speed of a component, for instance HTML parsing, you can repeat the tests N times and output a Python profile:
+
+```
+py.test tests/cosrlibtests/document/html/ -v --repeat 50 --profile
 ```
 
 ## Launching an index job
