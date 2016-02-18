@@ -5,7 +5,7 @@ services:
 
 before_install:
   - docker pull commonsearch/local-elasticsearch
-  - docker run -d -p 127.0.0.1:39200:9200 -p 127.0.0.1:39300:9300 commonsearch/local-elasticsearch
+  - docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
   - docker pull commonsearch/local-back
   - docker ps
   - docker info
@@ -13,6 +13,7 @@ before_install:
   - ps -ef
   - netstat -lpn
   - docker run commonsearch/local-back ip route show 0.0.0.0/0
+  - docker run commonsearch/local-back cat /etc/hosts
   - curl "http://127.0.0.1:39200"
   - docker run -e COSR_ELASTICSEARCHTEXT commonsearch/local-back curl $COSR_ELASTICSEARCHTEXT
 
