@@ -18,4 +18,5 @@ before_install:
   - docker run -e COSR_ELASTICSEARCHTEXT commonsearch/local-back curl $COSR_ELASTICSEARCHTEXT
 
 script:
+  - make docker_pylint
   - make docker_test

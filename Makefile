@@ -108,5 +108,8 @@ docker_test:
 pylint:
 	PYTHONPATH=. pylint cosrlib urlserver jobs
 
+docker_pylint:
+	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make pylint
+
 todo:
 	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver jobs
