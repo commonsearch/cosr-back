@@ -1,13 +1,21 @@
 # cosr-back
 
-This repository contains the main components of the [Common Search](https://about.commonsearch.org) backend, basically everything happening before indexing in Elasticsearch:
+This repository contains the main components of the [Common Search](https://about.commonsearch.org) backend.
+
+Your help is welcome! We have a complete guide on [how to contribute](CONTRIBUTING.md).
+
+## Understand the project
+
+This repository has 4 components:
 
  - **cosrlib**: Python code for parsing, analyzing and indexing documents
  - **jobs**: Spark jobs using cosrlib.
  - **urlserver**: A service for getting metadata about URLs from static databases
  - **explainer**: (Upcoming) A web frontend for explaining and debugging results
 
-Your help is welcome! You can use the [issues page](https://github.com/commonsearch/cosr-back) to suggest improvements or report bugs.
+Here is how they fit in our [general architecture](https://about.commonsearch.org/developer/architecture):
+
+![General technical architecture of Common Search](https://about.commonsearch.org/images/developer/architecture-2016-02.svg)
 
 ## Local install with Docker
 
