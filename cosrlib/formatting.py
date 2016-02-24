@@ -3,6 +3,7 @@ from cosrlib import re
 
 _RE_WHITESPLACE = re.compile(r"\s+")
 _RE_REMOVE_LAST_WORD = re.compile(r"\s([^\s]*)$")
+_RE_SPLIT_WORDS = re.compile(r"[\s\W]+")
 
 # Some titles are useless and should be replaced by something more relevant
 BLACKLISTED_TITLES = frozenset([
@@ -121,3 +122,43 @@ def format_summary(document, url_metadata):  # pylint: disable=unused-argument
     cleaned = " ".join(tokens)
 
     return unicode_truncate(cleaned, SUMMARY_MAX_LENGTH, keep_words=True)
+
+
+def infer_subwords(words, vocabularies):
+    """ Turns a chunk of text like ["lemonde", "fr"] into ["le", "monde", "fr"] with a vocabulary """
+
+    # This is a very basic implementation for now.
+
+    ret = []
+    vocabulary_words = _RE_SPLIT_WORDS.split((" ".join(vocabularies)).lower())
+
+    for text in words:
+        text = text.lower()
+
+        # List of (subword, position) matches
+        matches = sorted([
+            (subword, text.find(subword))
+            for subword in vocabulary_words
+            if subword
+        ], key=lambda x: x[1])
+
+        pos = 0
+        for subword, new_pos in matches:
+            # Not found at all or not found in what's left
+            if new_pos == -1 or new_pos < pos:
+                continue
+
+            # Add the leftovers as a word
+            if new_pos > pos:
+                ret.append(text[pos:new_pos])
+                pos = new_pos
+
+            # Add the subword we found
+            ret.append(subword)
+            pos += len(subword)
+
+        # Final leftovers
+        if pos < len(text):
+            ret.append(text[pos:])
+
+    return ret

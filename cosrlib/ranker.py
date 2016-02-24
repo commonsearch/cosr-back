@@ -21,16 +21,19 @@ class Ranker(object):
         """
 
         signal_weights = {
-            "url_total_length": 1,
-            "url_path_length": 1,
-            "alexa_top1m": 3,
-            "dmoz_domain": 2,
+
+            # TODO: should this be a part of the same rank? Or should we split popularity & url simplicity?
+            "url_total_length": 0.01,
+            "url_path_length": 0.01,
+
+            "alexa_top1m": 5,
+            "dmoz_domain": 1,
             "dmoz_url": 1,
             "webdatacommons_hc": 1
         }
 
         sum_ranks = 0.
-        sum_weights = 0
+        sum_weights = 0.
 
         signals = {}
 

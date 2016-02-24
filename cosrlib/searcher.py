@@ -24,14 +24,18 @@ class Searcher(object):
     def empty(self):
         pass
 
-    def search(self, q, explain=False, lang=None, fetch_docs=False):
+    def search(self, q, explain=False, lang=None, fetch_docs=False, domain=None):
         """ Performs a search on Common Search. Only for tests """
 
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html
+        # https://www.elastic.co/guide/en/elasticsearch/guide/current/boosting-by-popularity.html
         scoring_functions = [
             {
                 "field_value_factor": {
                     "field": "rank",
+                    "factor": 1,
+
+                    # No rank should be missing (at the very least we have the url length)
                     "missing": 0
                 }
             }
@@ -41,19 +45,31 @@ class Searcher(object):
             scoring_functions.append({
                 "field_value_factor": {
                     "field": "lang_%s" % lang,
-                    "missing": 0.1
+                    "missing": 0.002
                 }
             })
 
-        # https://www.elastic.co/guide/en/elasticsearch/guide/current/boosting-by-popularity.html
+        # https://www.elastic.co/guide/en/elasticsearch/guide/current/multi-field-search.html
+        es_query = {
+            "must": {
+                "multi_match": {
+                    "query": q,
+                    "type": "cross_fields",
+                    "tie_breaker": 0.5,
+                    "fields": ["title^3", "body", "url_words^2", "domain_words^8"]
+                }
+            }
+        }
+
+        # https://www.elastic.co/guide/en/elasticsearch/reference/2.2/query-filter-context.html
+        if domain:
+            es_query["filter"] = [{"term": {"domain": domain}}]
+
         es_body = {
             "query": {
                 "function_score": {
                     "query": {
-                        "multi_match": {
-                            "query": q,
-                            "fields": ["title", "body", "url_words", "domain_words^2"]
-                        }
+                        "bool": es_query
                     },
 
                     # Defaults
@@ -65,6 +81,7 @@ class Searcher(object):
             },
             "explain": explain
         }
+
         # print es_body
 
         es_text_result = self.es_text.search(  # pylint: disable=unexpected-keyword-arg
@@ -74,6 +91,10 @@ class Searcher(object):
             fields="*",
             sort="_score:desc",
             from_=0,
+
+            # We must use dfs_query_then_fetch here because we have very small corpuses
+            # in tests and we want exact values for the term frequencies.
+            # https://www.elastic.co/blog/understanding-query-then-fetch-vs-dfs-query-then-fetch
             search_type="dfs_query_then_fetch",
             size=50
         )

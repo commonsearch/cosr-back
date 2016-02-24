@@ -19,7 +19,7 @@ def test_get_url_words():
 
     doc = HTMLDocument("", url="http://www.nytimes.com/2011/10/06/arts/music/maceo-parker.html?print=true").parse()
     assert doc.get_url_words() == [
-        "www", "nytimes", "com", "2011", "10", "06", "arts", "music", "maceo", "parker", "html", "print", "true"
+        "nytimes", "com", "2011", "10", "06", "arts", "music", "maceo", "parker", "html", "print", "true"
     ]
 
     doc = HTMLDocument("", url="https://en.wikipedia.org/wiki/Nine_Inch_Nails").parse()

@@ -6,7 +6,7 @@ from elasticsearch.client import IndicesClient
 from elasticsearch.exceptions import ConnectionTimeout
 
 from .config import config
-from .es_mappings import ES_MAPPINGS
+from .es_mappings import ES_MAPPINGS, ES_SIMILARITIES
 
 
 class ElasticsearchBulkIndexer(object):
@@ -113,7 +113,9 @@ class ElasticsearchBulkIndexer(object):
 
                 # If 1: The index will need to be refreshed manually,
                 # but this optimizes bulk insertions
-                "refresh_interval": "60s"
+                "refresh_interval": "-1",
+
+                "similarity": ES_SIMILARITIES
             },
             "mappings": mappings
         })

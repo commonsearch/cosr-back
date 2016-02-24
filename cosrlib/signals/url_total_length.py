@@ -7,4 +7,4 @@ class Signal(BaseSignal):
     uses_url_metadata = False
 
     def get_value(self, document, url_metadata):
-        return max(0, min(1, (111.0 - len(document.get_url().url)) / 100))
+        return max(0, min(1, (111.0 - len(document.get_url().normalized)) / 100))

@@ -78,12 +78,18 @@ class Document(object):
 
         self._word_groups.append(wg)
 
-    def get_url_words(self):
+    def get_url_words(self, with_paid_domain=True):
         """ Returns a list of words found in the URL """
         url = self.get_url()
         if not url:
             return []
-        return self._split_url_words(url.url)
+
+        if with_paid_domain:
+            return self._split_url_words(url.normalized)
+        elif url.tldextracted.subdomain in ("www", ""):
+            return self._split_url_words(url.parsed.path)
+        else:
+            return self._split_url_words(url.tldextracted.subdomain) + self._split_url_words(url.parsed.path)
 
     def get_domain_paid_words(self):
         """ Returns a list of words found in the paid-level domain """

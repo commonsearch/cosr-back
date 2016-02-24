@@ -1,3 +1,5 @@
+import math
+
 from . import BaseSignal
 
 
@@ -11,4 +13,12 @@ class Signal(BaseSignal):
         if not alexa_rank:
             return None
 
-        return (1000001.0 - int(alexa_rank)) / 1000000
+        max_rank = 1000001
+
+        # Attenuate differencies in the top100
+        k1 = 2
+
+        # http://www.wolframalpha.com/input/?i=1+-+(ln(x%2B1)%2Fln(1000000))%5E2+with+x+from+0+to+1000
+        # http://www.wolframalpha.com/input/?i=1+-+(ln(x%2B1)%2Fln(1000000))%5E2+with+x+from+0+to+1000000
+
+        return 1 - (math.log(float(alexa_rank), max_rank)) ** k1

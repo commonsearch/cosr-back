@@ -68,7 +68,7 @@ CORPUSES = [
             "url": "http://example.com/",
             "content": """<html><title>Large title for the homepage</title> Homepage text</html>"""
         }, {
-            "url": "http://example.com/dir1/dir2/subpage",
+            "url": "http://example.com/subpage",
             "content": """<html><title>Example</title> Subpage text</html>"""
         }, {
             "url": "http://otherdomain.com/example",
@@ -77,7 +77,27 @@ CORPUSES = [
         "explain": False,
         "searches": {
             None: {
-                "example": [0, 1, 2]
+                "example": [1, 0, 2]
+            }
+        }
+    },
+    {
+        "id": "www_preferred",
+        "desc": "Prefer www to other shorted subdomains",
+        "docs": [{
+            "url": "http://www.example.com/",
+            "content": """<html><title>Title</title> Homepage text</html>"""
+        }, {
+            "url": "http://ww.example.com/",
+            "content": """<html><title>Title</title> Homepage text</html>"""
+        }, {
+            "url": "http://w.example.com/",
+            "content": """<html><title>Title</title> Homepage text</html>"""
+        }],
+        "explain": True,
+        "searches": {
+            None: {
+                "example": [0, 2, 1]
             }
         }
     },
@@ -85,7 +105,7 @@ CORPUSES = [
         "id": "language_selection",
         "desc": "Language settings have an influence on results",
         "docs": [{
-            "url": "http://example.com/newspaper-le-monde",
+            "url": "http://example.com/newspaper",
             "content": """<html><title>The Newspaper Le Monde</title> Le Monde is a French daily evening newspaper founded by Hubert Beuve-Mery and continuously published in Paris since its first edition on 19 December 1944. It is one of the most important and widely respected newspapers in the world.</html>"""
         }, {
 
@@ -106,6 +126,155 @@ CORPUSES = [
             None: {
                 "monde": [0, 1],
                 "newspaper": [0]
+            }
+        }
+    },
+    {
+        "id": "multiple_terms_simple",
+        "desc": "Test relevance with multiple terms",
+        "docs": [{
+            "url": "http://example.com/1",
+            "content": """<html><title>Example</title> This is a great example of text.</html>"""
+        }, {
+            "url": "http://example.com/2",
+            "content": """<html><title>Example text</title> This is a great example.</html>"""
+        }, {
+            "url": "http://example.com/text",
+            "content": """<html><title>Example text</title> This is a great example.</html>"""
+        }, {
+            "url": "http://text.example.com/",
+            "content": """<html><title>Example text</title> This is a great example.</html>"""
+        }, {
+            "url": "http://a-larger-example-url.com/",
+            "content": """<html><title>No good title</title> This is a great example text.</html>"""
+        }],
+        "explain": False,
+        "searches": {
+            None: {
+                "example": [0, 1, 3, 2, 4],
+                "example text": [3, 2, 1, 0, 4],
+                "text example": [3, 2, 1, 0, 4],
+                "text": [3, 2, 1, 0, 4]
+            }
+        }
+    },
+    {
+        "id": "term_frequencies_simple",
+        "desc": "Test the impact of term frequencies on different fields",
+        "docs": [{
+            "url": "http://example.com/0-example-abcdefg",
+            "content": """<html><title>Example title</title> This is a great example of text.</html>"""
+        },
+        {
+            "url": "http://example.com/1-example-abcdefg",
+            "content": """<html><title>Example title</title> This is a great example of text. Example - ary!</html>"""
+        },
+        {
+            "url": "http://example.com/2-example-example-abcdefg-abcdefg",
+            "content": """<html><title>Example title</title> This is a great example of text. Example - ary!</html>"""
+        },
+        {
+            "url": "http://example.com/3-example-example-example-example",
+            "content": """<html><title>Example example title</title> This is a great abcdefg of text. abcdefg - ary!</html>"""
+        },
+        {
+            "url": "http://example.com/4-example-abcdefg-abcdefg-abcdefg",
+            "content": """<html><title>Title</title> This is a great example of text. example - ary! example example example example example example example example example</html>"""
+        }
+        ],
+        "explain": False,
+        "searches": {
+            None: {
+                "example": [1, 0, 2, 3, 4]
+            }
+        }
+    },
+    {
+        "id": "test_popularity_rank",
+        "desc": "Test the impact of the popularity on the ranks",
+        "docs": [{
+            "url": "http://abcde-example.com/0",
+            "content": """<html><title>Example</title> This is a great example of text with title.</html>""",
+            "url_metadata_extra": {
+                "alexa_top1m_rank": 1
+            }
+        },
+        {
+            "url": "http://abcde-example.com/1",
+            "content": """<html><title>Example title</title> This is a great example of text.</html>""",
+            "url_metadata_extra": {
+                "alexa_top1m_rank": 100
+            }
+        },
+        {
+            "url": "http://abcde-example.com/2",
+            "content": """<html><title>Example title</title> This is a great example of text.</html>""",
+            "url_metadata_extra": {
+                "alexa_top1m_rank": 10000
+            }
+        },
+        {
+            "url": "http://abcde-example.com/3",
+            "content": """<html><title>Example title</title> This is a great example of text.</html>""",
+            "url_metadata_extra": {
+                "alexa_top1m_rank": 100000
+            }
+        },
+        {
+            "url": "http://abcde-example.com/4",
+            "content": """<html><title>Example</title> This is a great example of text with nothing more to say.</html>""",
+            "url_metadata_extra": {
+                "alexa_top1m_rank": 1
+            }
+        }],
+        "explain": False,
+        "searches": {
+            None: {
+                "example": [0, 4, 1, 2, 3],
+                "example title": [1, 2, 0, 3, 4]
+            }
+        }
+    },
+    {
+        "id": "test_partial_url_match",
+        "desc": "Test partial matching on URLs and domains",
+        "docs": [{
+            "url": "http://www.example.com/0-page-link",
+            "content": """<html><title>Example Text!</title> Body</html>"""
+        },
+        {
+            "url": "http://text.example.com/1-page-link",
+            "content": """<html><title>Example Text!</title> Body</html>"""
+        },
+        {
+            "url": "http://textexample.com/2-abcd-efgh",
+            "content": """<html><title>Example Text!</title> Body</html>"""
+        },
+        {
+            "url": "http://mytextexample.com/3-abcd-efgh",
+            "content": """<html><title>Example Text!</title> Body</html>"""
+        },
+        {
+            "url": "http://mytextnexample.com/4-abcd-efgh",
+            "content": """<html><title>Example Text!</title> Body</html>"""
+        },
+        {
+            "url": "http://otherdomain.com/5-text-example.html",
+            "content": """<html><title>Example Text!</title> Body</html>"""
+        },
+        {
+            "url": "http://otherdomain.com/6-textexample.html",
+            "content": """<html><title>Example Text!</title> Body</html>"""
+        },
+        {
+            "url": "http://textexample.com/7-abcd-efgf",
+            "content": """<html><title>Other title</title> Body</html>"""
+        }],
+        "explain": False,
+        "searches": {
+            None: {
+                "example": [0, 1, 2, 3, 4, 5, 6],
+                "example text": [2, 3, 4, 1, 0, 5, 6]
             }
         }
     }
@@ -135,7 +304,7 @@ def test_ranking_corpuses(corpus_id, corpus_index, indexer, searcher):
             print
             for hit in hits:
                 doc_index = docids_map[str(hit["docid"])]
-                print " Doc #%s (%s)" % (doc_index, corpus["docs"][doc_index].get("url"))
+                print " Doc #%s (%s)  %s" % (doc_index, corpus["docs"][doc_index]["url"], corpus["docs"][doc_index]["content"][0:50])
                 print "   rank:   %s" % hit["rank"]
 
                 # https://github.com/elastic/elasticsearch/issues/15369

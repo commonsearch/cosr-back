@@ -4,7 +4,7 @@ from .urlclient import URLClient
 from .es import ElasticsearchBulkIndexer
 from .config import config
 from .signals import load_signal
-from .formatting import format_title, format_summary
+from .formatting import format_title, format_summary, infer_subwords
 
 
 class Indexer(object):
@@ -46,7 +46,11 @@ class Indexer(object):
         """ Index a group of documents """
 
         res = [
-            self.index_document(doc["content"], url=doc.get("url"))
+            self.index_document(
+                doc["content"],
+                url=doc.get("url"),
+                url_metadata_extra=doc.get("url_metadata_extra")
+            )
             for doc in docs
         ]
 
@@ -58,7 +62,7 @@ class Indexer(object):
 
         return res
 
-    def index_document(self, content, headers=None, url=None, links=False):
+    def index_document(self, content, headers=None, url=None, links=False, url_metadata_extra=None):
         """ Index one single document """
 
         doc = HTMLDocument(content, url=url, headers=headers)
@@ -77,12 +81,26 @@ class Indexer(object):
         # Get metadata & ranks from the URLServer
         url_metadata = self.urlclient.get_metadata([main_url])[0]
 
+        # Used mostly in tests, to measure the influence one particular signal
+        if url_metadata_extra:
+            url_metadata.update(url_metadata_extra)
+
         # Extract basic content
-        url_words = doc.get_url_words()[0:50]
+        url_words = doc.get_url_words(with_paid_domain=False)[0:50]
         domain_words = doc.get_domain_paid_words()[0:10]
 
         title = format_title(doc, url_metadata)
         summary = format_summary(doc, url_metadata)
+
+        # Infer words from concatenated strings ("lemonde" => "le monde")
+        inferred_url_words = infer_subwords(url_words, [title, summary])
+        inferred_domain_words = infer_subwords(domain_words, [title, summary])
+
+        if url_words != inferred_url_words:
+            url_words = [url_words, inferred_url_words]
+
+        if domain_words != inferred_domain_words:
+            domain_words = [domain_words, inferred_domain_words]
 
         docid = url_metadata["url_id"]
 
@@ -100,6 +118,7 @@ class Indexer(object):
         # Insert in text index
         es_text = {
             "domain_words": domain_words,
+            "domain": main_url.normalized_domain,
             "url_words": url_words,
             "title": title,
             "rank": rank

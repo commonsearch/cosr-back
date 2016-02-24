@@ -12,6 +12,7 @@ max-locals=40
 max-attributes=40
 max-branches=20
 max-returns=12
+max-args=10
 
 [FORMAT]
 max-line-length=110

@@ -1,3 +1,12 @@
+# https://www.elastic.co/guide/en/elasticsearch/guide/current/changing-similarities.html
+ES_SIMILARITIES = {
+    "title_bm25": {
+        "type": "BM25",
+        "b": 0.75,
+        "k1": 1
+    }
+}
+
 
 ES_MAPPINGS = {
 
@@ -19,7 +28,8 @@ ES_MAPPINGS = {
                         "mapping": {
                             "type": "string",
                             "store": False,
-                            "doc_values": False
+                            "doc_values": False,
+                            "similarity": "title_bm25"
                         }
                     }
                 },
@@ -29,7 +39,19 @@ ES_MAPPINGS = {
                         "mapping": {
                             "type": "string",
                             "store": False,
-                            "doc_values": False
+                            "doc_values": False,
+                            "similarity": "title_bm25"
+                        }
+                    }
+                },
+                {
+                    "domain": {
+                        "match": "domain",
+                        "mapping": {
+                            "type": "string",
+                            "index":"not_analyzed",
+                            "store": True,
+                            "doc_values": True  # Will we actually need to aggregate on the domain later?
                         }
                     }
                 },
@@ -39,7 +61,8 @@ ES_MAPPINGS = {
                         "mapping": {
                             "type": "string",
                             "store": False,
-                            "doc_values": False
+                            "doc_values": False,
+                            "similarity": "title_bm25"
                         }
                     }
                 },
@@ -49,7 +72,8 @@ ES_MAPPINGS = {
                         "mapping": {
                             "type": "string",
                             "store": False,
-                            "doc_values": False
+                            "doc_values": False,
+                            "similarity": "title_bm25"
                         }
                     }
                 },
@@ -74,7 +98,7 @@ ES_MAPPINGS = {
                     }
                 },
                 {
-                    "rank": {
+                    "langs": {
                         "match": "lang_*",
                         "mapping": {
                             "type": "float",

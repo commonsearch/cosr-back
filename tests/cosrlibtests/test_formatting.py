@@ -1,4 +1,4 @@
-from cosrlib.formatting import format_title, format_summary
+from cosrlib.formatting import format_title, format_summary, infer_subwords
 from cosrlib.document.html import HTMLDocument
 
 
@@ -63,7 +63,7 @@ def test_format_summary():
 
     html = """<html>
         <head><meta name="Description" content="" /></head>
-        <body> 
+        <body>
             <div>This is &lt;body&gt; text, very detailed, very long xxxxxxxxx! </div>
             <h1>But there is a more informative title! Use it</h1>
         </body>
@@ -71,3 +71,11 @@ def test_format_summary():
 
     page = HTMLDocument(html).parse()
     assert format_summary(page, {}) == "But there is a more informative title! Use it"
+
+def test_infer_spaces():
+
+    assert infer_subwords(["lemonde", "fr"], ["Le Monde: French Newspaper"]) == ["le", "monde", "fr"]
+    assert infer_subwords(["lemonde", "fr"], ["Le", "Monde: French Newspaper"]) == ["le", "monde", "fr"]
+
+    assert infer_subwords(["lemonde", "x"], ["LeMonde: French Newspaper"]) == ["lemonde", "x"]
+    assert infer_subwords(["nomatch", "com"], ["LeMonde: French Newspaper"]) == ["nomatch", "com"]

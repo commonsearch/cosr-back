@@ -12,7 +12,7 @@ def test_simple_insert_and_search(indexer, searcher):
 
     indexed2 = indexer.client.index_document(
       """<html><title>another world</title><body>document body</body></html>""",
-      url=URL("http://example.com/page2")
+      url=URL("http://example2.com/page2")
     )
     indexer.client.flush()
     indexer.client.refresh()
@@ -30,3 +30,8 @@ def test_simple_insert_and_search(indexer, searcher):
 
     search_results = searcher.client.search("world")
     assert len(search_results["hits"]) == 2
+
+
+    search_results = searcher.client.search("world", domain="example2.com")
+    assert len(search_results["hits"]) == 1
+    assert search_results["hits"][0]["docid"] == indexed2["docid"]
