@@ -53,7 +53,7 @@ You should look at our [README.md](README.md) to learn how to setup this reposit
 
 ## Pull Requests
 
-When contributing code, you will open a pull request so that the maintainers can check that everything looks good before merging your code. GitHub has a good documentation on [how pull requests work][pull-requests].
+When contributing code, you will open a pull request so that the maintainers can check that everything looks good before merging your code. GitHub has a good documentation on [how pull requests work](https://help.github.com/articles/using-pull-requests/).
 
 Before pushing your changes, you should try to run the tests locally with `make test`. [Travis-CI](https://travis-ci.org) will also automatically run them every time you push.
 
