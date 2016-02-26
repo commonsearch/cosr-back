@@ -18,6 +18,9 @@ _defaults = {
     # Host:port of the URLserver instance, or "local" for direct import on the same node
     "URLSERVER": "local",  # "192.168.99.100:9702"
 
+    # Host:port of the Explainer instance
+    "EXPLAINER": "0.0.0.0:9703",  # "127.0.0.1:9703"
+
     # Environment type: prod, staging, local, ci, ...
     "ENV": "local",
 

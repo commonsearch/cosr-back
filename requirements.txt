@@ -54,3 +54,6 @@ boto==2.39.0
 
 # Used in URLServer to serve requests in parallel
 gevent==1.1rc3
+
+# Used for the Explainer service
+Flask==0.10.1

@@ -27,6 +27,17 @@ class Searcher(object):
     def search(self, q, explain=False, lang=None, fetch_docs=False, domain=None):
         """ Performs a search on Common Search. Only for tests """
 
+        # Try to detect a domain from the query string with site:xxx terms
+        if domain is None:
+            terms = q.split(u" ")
+            newterms = []
+            for term in terms:
+                if term.startswith("site:"):
+                    domain = term[5:]
+                else:
+                    newterms.append(term)
+            q = u" ".join(newterms)
+
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html
         # https://www.elastic.co/guide/en/elasticsearch/guide/current/boosting-by-popularity.html
         scoring_functions = [
@@ -54,6 +65,7 @@ class Searcher(object):
             "must": {
                 "multi_match": {
                     "query": q,
+                    "minimum_should_match": "75%",
                     "type": "cross_fields",
                     "tie_breaker": 0.5,
                     "fields": ["title^3", "body", "url_words^2", "domain_words^8"]

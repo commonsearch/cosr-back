@@ -11,7 +11,7 @@ This repository has 4 components:
  - **cosrlib**: Python code for parsing, analyzing and indexing documents
  - **jobs**: Spark jobs using cosrlib.
  - **urlserver**: A service for getting metadata about URLs from static databases
- - **explainer**: (Upcoming) A web frontend for explaining and debugging results
+ - **explainer**: A web service for explaining and debugging results, hosted at [explain.commonsearch.org](https://explain.commonsearch.org/)
 
 Here is how they fit in our [general architecture](https://about.commonsearch.org/developer/architecture):
 
@@ -65,6 +65,16 @@ spark-submit jobs/spark/index.py --warc_limit 1 --only_homepages --profile
 ```
 
 After this, if you have a `cosr-front` instance connected to the same Elasticsearch service, you will see the results!
+
+## Launching the explainer
+
+The explainer allows you to debug results easily. Just run:
+
+```
+make docker_explainer
+```
+
+Then open [http://192.168.99.100:9703](http://192.168.99.100:9703) in your browser (Assuming `192.168.99.100` is the IP of your Docker host)
 
 ## Alternate install without Docker
 
