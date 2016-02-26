@@ -111,9 +111,10 @@ class ElasticsearchBulkIndexer(object):
                 "number_of_shards": 5,
                 "number_of_replicas": 0,
 
-                # If 1: The index will need to be refreshed manually,
-                # but this optimizes bulk insertions
-                "refresh_interval": "-1",
+                # In prod we don't refresh manually so this is the only setting
+                # that will make ES periodically refresh to avoid storing only in temporary files
+                # as we index
+                "refresh_interval": "60s",
 
                 "similarity": ES_SIMILARITIES
             },

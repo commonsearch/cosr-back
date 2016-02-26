@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<form class="form-inline" style="width:100%" id="urlform" method="get" action="/url">
+  <input name="url" type="text" class="form-control" id="url" placeholder="Enter an URL" style="width:50%">
+  <button type="submit" class="btn btn-primary">OK</button>
+</form>
+
+<br/>
+
+<div id="urldebug_content"></div>
+
+<script type="text/template" id="tpl_urldebug">
+
+  <div class="alert alert-info">Please note that the following data was just fetched and parsed from this URL. The Common Crawl dump indexed in Common Search probably contains an older version of this page.</div>
+
+  <h2>Properties</h2>
+
+    <dl class="dl-horizontal">
+
+      <dt>URL</dt>
+      <dd><a href='<%= data.url %>' target='_blank'><%= data.url %></a></dd>
+
+      <dt>Static rank</dt>
+      <dd><%= data.rank %></dd>
+
+      <dt>Raw title</dt>
+      <dd><%= data.title_raw %></dd>
+
+      <dt>Formatted title</dt>
+      <dd><%= data.title %></dd>
+
+      <dt>Formatted summary</dt>
+      <dd><%= data.summary %></dd>
+
+      <dt>Detected languages</dt>
+      <dd><% _.each(_.sortBy(_.toPairs(data.langs), function(x) { return -x[1]; }), function(v, k) { %>
+        <%= v[0] %> (weight=<%= v[1] %>) &nbsp; &nbsp;
+      <% }) %></dd>
+
+    </dl>
+
+
+  <h2>Static ranking signals</h2>
+
+    <dl class="dl-horizontal">
+
+      <% _.each(data.ranking_signals, function(v, k) { %>
+        <dt><%= k %></dt>
+        <dd><%= v.value %> (weight=<%= v.weight %>)</dd>
+      <% }) %>
+
+    </dl>
+
+  <h2>Word groups (<%= data.word_groups.length %>)</h2>
+
+    <ul>
+
+      <% _.each(data.word_groups, function(v, k) { %>
+        <li><b><%= v.tag %></b>
+        <%= v.words %>
+        </li>
+      <% }) %>
+
+    </ul>
+
+  <h2>Hyperlinks (<%= data.links.length %>)</h2>
+
+    <ul>
+
+      <% _.each(data.links, function(v, k) { %>
+        <li><%= v.words.join(" ") %> <a href="<%= v.href %>" target="_blank"><%= v.href %></a></li>
+      <% }) %>
+
+    </ul>
+
+</script>
+
+{% endblock %}

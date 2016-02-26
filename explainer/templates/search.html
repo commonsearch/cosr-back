@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<form class="form-inline" style="width:100%" id="searchform" method="get" action="/">
+  <input name="q" type="text" class="form-control" id="q" placeholder="Enter a search" style="width:50%">
+  <button type="submit" class="btn btn-primary">OK</button>
+
+  <select id="g" name="g" style="margin-left:50px;">
+    <option value="en">EN</option>
+
+    <option value="ar">AR</option>
+    <option value="de">DE</option>
+    <option value="es">ES</option>
+    <option value="fr">FR</option>
+    <option value="it">IT</option>
+    <option value="ja">JA</option>
+    <option value="ko">KO</option>
+    <option value="nl">NL</option>
+    <option value="pl">PL</option>
+    <option value="pt">PT</option>
+    <option value="ru">RU</option>
+    <option value="vi">VI</option>
+    <option value="zh">ZH</option>
+    <option value="all">ALL</option>
+  </select>
+</form>
+
+<div id="searchdebug_content"></div>
+
+<script type="text/template" id="tpl_searchdebug">
+
+  <h2>Results (<%= data.hits.length %>)</h2>
+
+  <% _.each(data.hits, function(hit) { %>
+
+    <h3><%= hit.title %></h3>
+
+    [<a href="/url?url=<%= encodeURIComponent(hit.url) %>">debug</a>] <a href="<%= hit.url %>"><%= hit.url %></a>
+
+    <p><%= hit.summary %></p>
+
+    <dl class="dl-horizontal">
+      <dt>docid</dt>
+      <dd><%= hit.docid %></dd>
+
+      <dt>static rank</dt>
+      <dd><%= hit.rank %></dd>
+
+      <dt>ES score</dt>
+      <dd><%= hit.score %></dd>
+
+      <dt>ES explain</dt>
+      <dd><pre style="font-size:10px;"><%= hit.explain %></pre></dd>
+
+    </dl>
+
+  <% }) %>
+
+</script>
+
+{% endblock %}

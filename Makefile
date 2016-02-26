@@ -17,7 +17,7 @@ docker_pull:
 build_source_export:
 	rm -rf build/source_export*
 	mkdir -p build/source_export
-	cp -R cosrlib urlserver jobs scripts tests requirements.txt Makefile build/source_export/
+	cp -R cosrlib urlserver explainer jobs scripts tests requirements.txt Makefile build/source_export/
 	cd build/source_export && tar --exclude='*/*.pyc' --exclude=".DS_Store" -czvf ../source_export.tgz * && cd ../../
 	rm -rf build/source_export
 
@@ -92,6 +92,10 @@ reindex10:
 	./scripts/elasticsearch_reset.py --delete
 	spark-submit jobs/spark/index.py --warc_limit 10
 
+# Run the explainer web service
+docker_explainer:
+	docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -p 9703:9703  -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS commonsearch/local-back python explainer/server.py
+
 
 
 #
@@ -106,10 +110,10 @@ docker_test:
 	docker run -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
 
 pylint:
-	PYTHONPATH=. pylint cosrlib urlserver jobs
+	PYTHONPATH=. pylint cosrlib urlserver jobs explainer
 
 docker_pylint:
 	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make pylint
 
 todo:
-	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver jobs
+	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver jobs explainer

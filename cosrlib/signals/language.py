@@ -10,6 +10,7 @@ class Signal(BaseSignal):
     uses_url_metadata = False
 
     def detect_from_document(self, document, html=None):
+
         return cld2.detect(
             html or document.source_data,
             isPlainText=False,

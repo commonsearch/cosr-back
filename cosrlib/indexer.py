@@ -62,75 +62,105 @@ class Indexer(object):
 
         return res
 
+    def parse_document(self, doc, url_metadata_extra=None):
+        """ Extract as much info as possible from a document for indexing """
+
+        # Do the actual HTML parsing
+        doc.parse()
+
+        parsed = {
+
+            # Detect the language of the document
+            "langs": self.lang_detector(doc, None),
+
+            # Guess the main document URL
+            "url": doc.get_url(),
+
+            # Splitted words in the URL
+            "url_words": doc.get_url_words(with_paid_domain=False)[0:50],
+
+            # Splitted words in the paid domain
+            "domain_words": doc.get_domain_paid_words()[0:10]
+        }
+
+        # Get metadata from the URLServer
+        parsed["url_metadata"] = self.urlclient.get_metadata([parsed["url"]])[0]
+
+        # Used mostly in tests, to measure the influence one particular signal
+        if url_metadata_extra:
+            parsed["url_metadata"].update(url_metadata_extra)
+
+        # Format basic content
+        parsed["title_formatted"] = format_title(doc, parsed["url_metadata"])
+        parsed["summary_formatted"] = format_summary(doc, parsed["url_metadata"])
+
+        # Infer words from concatenated strings ("lemonde" => "le monde")
+        inferred_url_words = infer_subwords(
+            parsed["url_words"],
+            [parsed["title_formatted"], parsed["summary_formatted"]]
+        )
+        inferred_domain_words = infer_subwords(
+            parsed["domain_words"],
+            [parsed["title_formatted"], parsed["summary_formatted"]]
+        )
+
+        if parsed["url_words"] != inferred_url_words:
+            parsed["url_words_inferred"] = inferred_url_words
+
+        if parsed["domain_words"] != inferred_domain_words:
+            parsed["domain_words_inferred"] = inferred_domain_words
+
+        return parsed
+
+
     def index_document(self, content, headers=None, url=None, links=False, url_metadata_extra=None):
         """ Index one single document """
 
         doc = HTMLDocument(content, url=url, headers=headers)
-        doc.parse()
 
-        # Detect the language of the document
-        langs = self.lang_detector(doc, None)
+        parsed = self.parse_document(doc, url_metadata_extra=url_metadata_extra)
+
+        docid = parsed["url_metadata"]["url_id"]
 
         # Free memory ASAP - we don't need raw data from now on
         del doc.source_data
         del doc.parser
 
-        # Guess the main document URL
-        main_url = doc.get_url()
-
-        # Get metadata & ranks from the URLServer
-        url_metadata = self.urlclient.get_metadata([main_url])[0]
-
-        # Used mostly in tests, to measure the influence one particular signal
-        if url_metadata_extra:
-            url_metadata.update(url_metadata_extra)
-
-        # Extract basic content
-        url_words = doc.get_url_words(with_paid_domain=False)[0:50]
-        domain_words = doc.get_domain_paid_words()[0:10]
-
-        title = format_title(doc, url_metadata)
-        summary = format_summary(doc, url_metadata)
-
-        # Infer words from concatenated strings ("lemonde" => "le monde")
-        inferred_url_words = infer_subwords(url_words, [title, summary])
-        inferred_domain_words = infer_subwords(domain_words, [title, summary])
-
-        if url_words != inferred_url_words:
-            url_words = [url_words, inferred_url_words]
-
-        if domain_words != inferred_domain_words:
-            domain_words = [domain_words, inferred_domain_words]
-
-        docid = url_metadata["url_id"]
-
         # Compute global rank
-        rank, _ = self.ranker.get_global_document_rank(doc, url_metadata)
+        rank, _ = self.ranker.get_global_document_rank(doc, parsed["url_metadata"])
 
         # Insert in Document store
         es_doc = {
-            "url": main_url.url,
-            "title": title,
-            "summary": summary
+            "url": parsed["url"].url,
+            "title": parsed["title_formatted"],
+            "summary": parsed["summary_formatted"]
         }
         self.es_docs.index(docid, es_doc)
 
         # Insert in text index
         es_text = {
-            "domain_words": domain_words,
-            "domain": main_url.normalized_domain,
-            "url_words": url_words,
-            "title": title,
+            "domain_words": (
+                [parsed["domain_words"], parsed["domain_words_inferred"]]
+                if parsed.get("domain_words_inferred")
+                else parsed["domain_words"]
+            ),
+            "domain": parsed["url"].normalized_domain,
+            "url_words": (
+                [parsed["url_words"], parsed["url_words_inferred"]]
+                if parsed.get("url_words_inferred")
+                else parsed["url_words"]
+            ),
+            "title": parsed["title_formatted"],  # TODO: should we index the formatted version?
             "rank": rank
         }
 
-        for lang in langs:
-            es_text["lang_%s" % lang] = langs[lang]
+        for lang, weight in parsed["langs"].iteritems():
+            es_text["lang_%s" % lang] = weight
 
         # print es_text
 
         # Assemble the extracted word groups
-        # TODO weights!
+        # TODO weights! https://github.com/commonsearch/cosr-back/issues/5
         word_groups = doc.get_word_groups()
         es_text["body"] = u" ".join([wg["words"].decode("utf-8", "ignore") for wg in word_groups])
 
@@ -139,7 +169,7 @@ class Indexer(object):
         # Return structured data for Spark operations that may happen after this
         ret = {
             "docid": docid,
-            "url": main_url,
+            "url": parsed["url"],
             "rank": rank
         }
         if links:

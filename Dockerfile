@@ -116,6 +116,9 @@ RUN curl -sL --retry 3 \
 
 ADD requirements.txt /requirements.txt
 
+# Upgrade pip because debian has a really old version
+RUN pip install --upgrade pip
+
 # Cython must be installed prior to gumbocy. TODO: how to fix that?
 RUN grep -i Cython /requirements.txt | xargs pip install
 
