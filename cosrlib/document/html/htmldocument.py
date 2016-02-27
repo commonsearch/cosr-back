@@ -170,7 +170,8 @@ class HTMLDocument(Document):
                 if attrs.get("alt"):
                     self.add_word_group(attrs["alt"], tag="img")
                 if attrs.get("src"):
-                    self.add_word_group(" ".join(self._split_filename_words(attrs["src"])), tag="img")
+                    if not attrs["src"].startswith("data:"):
+                        self.add_word_group(" ".join(self._split_filename_words(attrs["src"])), tag="img")
 
             # Does this element start a hidden subtree?
             if self.level_hidden is None and self._guess_element_hidden(attrs):
