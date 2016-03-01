@@ -107,7 +107,8 @@ def debug_url():
 
 
 def main():
-    app.debug = True
+    if config["ENV"] == "local":
+        app.debug = True
     print "Explainer listening on http://%s" % config["EXPLAINER"]
     run_simple(config["EXPLAINER"].split(":")[0], int(config["EXPLAINER"].split(":")[1]), app)
 
