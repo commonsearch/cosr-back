@@ -57,3 +57,6 @@ gevent==1.1rc3
 
 # Used for the Explainer service
 Flask==0.10.1
+
+# Used for URLServer data storage & exchange
+protobuf==3.0.0b2

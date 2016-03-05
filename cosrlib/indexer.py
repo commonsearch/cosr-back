@@ -88,7 +88,9 @@ class Indexer(object):
 
         # Used mostly in tests, to measure the influence one particular signal
         if url_metadata_extra:
-            parsed["url_metadata"].update(url_metadata_extra)
+            for k, v in url_metadata_extra.iteritems():
+                for item_k, item_v in v.iteritems():
+                    setattr(parsed["url_metadata"][k], item_k, item_v)
 
         # Format basic content
         parsed["title_formatted"] = format_title(doc, parsed["url_metadata"])
@@ -112,7 +114,6 @@ class Indexer(object):
 
         return parsed
 
-
     def index_document(self, content, headers=None, url=None, links=False, url_metadata_extra=None):
         """ Index one single document """
 
@@ -120,7 +121,7 @@ class Indexer(object):
 
         parsed = self.parse_document(doc, url_metadata_extra=url_metadata_extra)
 
-        docid = parsed["url_metadata"]["url_id"]
+        docid = parsed["url_metadata"]["url"].id
 
         # Free memory ASAP - we don't need raw data from now on
         del doc.source_data

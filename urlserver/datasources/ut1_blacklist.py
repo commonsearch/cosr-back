@@ -1,34 +1,66 @@
-from ._rocksdb import RocksdbDataSource
+import os
+import tempfile
+from collections import defaultdict
+import shutil
+
 from . import BaseDataSource
+from cosrlib.config import config
+from cosrlib.url import URL
 
 
-class DataSource(BaseDataSource, RocksdbDataSource):
+class DataSource(BaseDataSource):
     """ Return the UT1 categories in which the URL belongs.
 
         https://dsi.ut-capitole.fr/blacklists/index_en.php
     """
 
-    db_path = "local-data/ut1-blacklist/blacklist-rocksdb"
+    dump_testdata = "tests/testdata/ut1_blacklists"
+    dump_url = "ftp://ftp.ut-capitole.fr/pub/reseau/cache/squidguard_contrib/blacklists.tar.gz"
+    dump_batch_size = None
 
-    def classes(self, url):
-        ret = set()
+    def iter_dump(self):
+        if config["TESTDATA"] == "1":
+            extract_dir = self.dump_testdata
+            clean = False
+        else:
+            extract_dir = tempfile.mkdtemp(suffix="cosr-ut1-import")
+            clean = True
 
-        # We indexed both the domains and the URLs
-        # TODO should all substrings be considered? In which case RocksDB can't be used
-        # and we should build some kind of matching tree instead.
-        keys = list(set([
-            url.domain,
-            url.pld,
-            url.normalized,
-            url.normalized_without_query,
-            url.url
-        ]))
+            os.system("curl %s > %s/blacklists.tar.gz" % (self.dump_url, extract_dir))
+            os.system("cd %s && tar zxf blacklists.tar.gz" % extract_dir)
+            extract_dir += "/blacklists"
 
-        found = self.db.multi_get(keys)
+        data = defaultdict(list)
 
-        for categ in found.itervalues():
-            if categ:
-                for c in categ.split(" "):
-                    ret.add(c)
+        for fp in os.listdir(extract_dir):
+            fullpath = os.path.join(extract_dir, fp)
 
-        return list(ret)
+            if os.path.isdir(fullpath) and not os.path.islink(fullpath):
+
+                cnt = 0
+
+                with open(fullpath + "/domains", 'r') as f:
+                    for line in f.readlines():
+                        url = URL(line.strip()).normalized
+                        if url:
+                            data[url].append(fp)
+                            cnt += 1
+
+                if os.path.isfile(fullpath + "/urls"):
+                    with open(fullpath + "/urls", 'r') as f:
+                        for line in f.readlines():
+                            url = URL(line.strip()).normalized
+                            if url:
+                                data[url].append(fp)
+                                cnt += 1
+
+                print "Done %s (%s entries)" % (fp, cnt)
+
+        if clean:
+            shutil.rmtree(os.path.dirname(extract_dir))
+
+        return data.iteritems()
+
+    def import_row(self, key, value):
+        """ Maps a raw data row into a list of (key, values) pairs """
+        return [(key, {"ut1_blacklist": value})]

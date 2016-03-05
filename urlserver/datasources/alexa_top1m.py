@@ -1,33 +1,16 @@
-from ._rocksdb import RocksdbDataSource
 from . import BaseDataSource
-from cosrlib import re
 
 
-class DataSource(BaseDataSource, RocksdbDataSource):
-    """ Return the rank in the top 1 million domains from Alexa
-    """
+class DataSource(BaseDataSource):
+    """ Return the rank in the top 1 million domains from Alexa """
 
-    db_path = "local-data/alexa/top-1m-rocksdb"
+    dump_testdata = "tests/testdata/alexa-top1m.csv"
+    dump_url = "http://s3.amazonaws.com/alexa-static/top-1m.csv.zip"
+    dump_compression = "zip"
+    dump_compression_params = ("top-1m.csv", )
+    dump_format = "csv"
+    dump_batch_size = 100000
 
-    def rank(self, url):
-        if not self.db:
-            return None
-
-        rank = self.db.get(url.domain)
-        if rank is not None:
-            return rank
-
-        rank = self.db.get(url.normalized_domain)
-        if rank is not None:
-            return rank
-
-        # Dirty hack to fix wikipedia
-        # Domains like images.google.com are currently None :/
-        # TODO: detect domains like tumblr/blogpost that generate lots of unrelated subdomains?
-        domain = re.sub(r"^[a-z]{2}\.", "", url.normalized_domain)
-
-        rank = self.db.get(domain)
-        if rank is not None:
-            return rank
-
-        return None
+    def import_row(self, i, row):
+        """ Maps a raw data row into a list of (key, values) pairs """
+        return [(row[1], {"alexa_top1m": int(row[0])})]

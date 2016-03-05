@@ -8,7 +8,7 @@ class Signal(BaseSignal):
 
     def get_value(self, document, url_metadata):
 
-        rank = url_metadata["webdatacommons_hc_rank"]
+        rank = url_metadata["domain"].webdatacommons_hc
         if not rank:
             return None
 

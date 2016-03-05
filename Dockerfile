@@ -108,6 +108,17 @@ RUN curl -sL --retry 3 \
   && ln -s $SPARK_HOME /usr/spark
 
 
+#
+# Install Protocol Buffers
+#
+
+ENV PROTOBUF_VERSION 3.0.0-beta-2
+RUN wget https://codeload.github.com/google/protobuf/tar.gz/v${PROTOBUF_VERSION} && \
+  tar zxf v${PROTOBUF_VERSION} && cd protobuf-${PROTOBUF_VERSION} && \
+  ./autogen.sh && ./configure && make && make install && ldconfig && \
+  cd .. && rm -rf protobuf-${PROTOBUF_VERSION} v${PROTOBUF_VERSION}
+
+
 
 
 #

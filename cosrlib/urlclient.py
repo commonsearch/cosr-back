@@ -2,6 +2,7 @@ from mprpc import RPCClient
 
 from .config import config
 from .url import URL
+from urlserver.protos import urlserver_pb2
 
 
 URLSERVER_FIELDNAMES = {
@@ -69,21 +70,35 @@ class URLClientRemote(object):
         return self._rpc("get_domain_ids", urls)
 
     def get_metadata(self, urls):
-        """ Returns an array of complete fields for each URL """
+        """ Returns an array of complete fields for each URL, for each main variation of those URLs """
 
         if len(urls) == 0:
             return []
 
-        if isinstance(urls[0], URL):
-            urls = [u.url for u in urls]
+        if not isinstance(urls[0], URL):
+            urls = [URL(u) for u in urls]
 
-        res = self._rpc("get_metadata", urls)
+        # Multiple variations of the URLs to be tested. It is slightly inefficient, but we
+        # send the 4 variations in the same request and split them just below.
+        urls_variations = []
+        for url in urls:
+            urls_variations.extend([
+                url.normalized,
+                url.normalized_without_query,
+                url.normalized_domain,
+                url.pld
+            ])
+
+        res = self._rpc("get_metadata", urls_variations)
         ret = []
-        for row in res:
-            d = {}
-            for i, f in enumerate(URLSERVER_FIELDNAMES["get_metadata"]):
-                d[f] = row[i]
-            ret.append(d)
+
+        for url_i in xrange(len(res) / 4):
+
+            url_metadata = {}
+            for i, key in ((0, "url"), (1, "url_without_query"), (2, "domain"), (3, "pld")):
+                url_metadata[key] = urlserver_pb2.UrlMetadata()
+                url_metadata[key].ParseFromString(res[(url_i * 4) + i])
+            ret.append(url_metadata)
 
         return ret
 

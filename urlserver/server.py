@@ -1,6 +1,5 @@
 import os
 import sys
-import importlib
 
 if __name__ == "__main__":
     from gevent.server import StreamServer
@@ -9,26 +8,27 @@ from mprpc import RPCServer
 
 sys.path.insert(-1, os.path.normpath(os.path.join(__file__, "../../")))
 from cosrlib.url import URL
+from urlserver.id_generator import make_url_id, make_domain_id
+from urlserver.storage import Storage
+from urlserver.protos import urlserver_pb2
 
-datasources = {}
-
-datasource_dir = os.path.join(os.path.dirname(__file__), "datasources/")
-for datasource in os.listdir(datasource_dir):
-    if not datasource.startswith("_") and datasource.endswith(".py"):
-        ds_name = datasource.replace(".py", "")
-        ds = importlib.import_module(".datasources.%s" % ds_name, package="urlserver").DataSource()
-        datasources[ds_name] = ds
+db = Storage(read_only=True)
 
 
 class URLServer(RPCServer):
-    """ RPC server for getting static metadata about URLs """
+    """ RPC server for getting static metadata about URLs.
+
+        For simplicity we currently use mprpc, but we should migrate to gRPC or similar to
+        be able to send protobufs directly (and avoid re-encoding them as MessagePacks!)
+
+    """
 
     def get_ids(self, urls):
         """ Return a list of IDs for these URLs """
         ret = []
         for u in urls:
             url = URL(u)
-            ret.append(datasources["ids"].url_id(url))
+            ret.append(make_url_id(url))
         return ret
 
     def get_domain_ids(self, urls):
@@ -36,25 +36,24 @@ class URLServer(RPCServer):
         ret = []
         for u in urls:
             url = URL(u)
-            ret.append(datasources["ids"].domain_id(url))
+            ret.append(make_domain_id(url))
         return ret
 
     def get_metadata(self, urls):
-        """ Return a list of tuples of metadata for these URLs """
+        """ Return a list of tuples of metadata for these *normalized* URLs """
 
         ret = []
-        for u in urls:
+        for url in urls:
 
-            url = URL(u)
-            ret.append((
-                datasources["ids"].url_id(url),
-                datasources["ids"].domain_id(url),
-                datasources["alexa_top1m"].rank(url),
-                datasources["dmoz_url"].exists(url),
-                datasources["dmoz_domain"].exists(url),
-                datasources["ut1_blacklist"].classes(url),
-                datasources["webdatacommons_hc"].rank(url)
-            ))
+            data = db.get(url)
+
+            # If the URL has been in none of our static databases, we still want to return an ID
+            if data is None:
+                obj = urlserver_pb2.UrlMetadata()
+                obj.id = make_url_id(URL(url))
+                data = obj.SerializeToString()
+
+            ret.append(data)
 
         return ret
 
