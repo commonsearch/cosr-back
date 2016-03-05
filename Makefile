@@ -28,6 +28,7 @@ import_local_data:
 	rm -rf local-data/urlserver-rocksdb
 	rm -rf /tmp/cosrlocaldata
 	mkdir -p /tmp/cosrlocaldata
+	mkdir -p local-data
 	COSR_PATH_LOCALDATA=/tmp/cosrlocaldata python urlserver/import.py
 	mv /tmp/cosrlocaldata/urlserver-rocksdb local-data/urlserver-rocksdb
 	rm -rf /tmp/cosrlocaldata
