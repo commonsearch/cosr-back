@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+message UrlMetadata {
+	int64 id = 1;
+	int64 domain_id = 2;
+	int32 alexa_top1m = 3;
+	string dmoz_title = 4;
+	string dmoz_description = 5;
+	repeated string ut1_blacklist = 6;
+	float webdatacommons_hc = 7;
+	string wikidata_title = 8;
+	string wikidata_description = 9;
+}
+
+message UrlId {
+	int64 id = 1;
+}

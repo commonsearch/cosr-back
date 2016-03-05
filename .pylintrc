@@ -1,3 +1,6 @@
+[MASTER]
+ignore=urlserver_pb2.py
+
 [TYPECHECK]
 extension-pkg-whitelist=gumbocy,rocksdb,mmh3
 

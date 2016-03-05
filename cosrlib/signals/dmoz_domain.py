@@ -7,4 +7,4 @@ class Signal(BaseSignal):
 
     def get_value(self, document, url_metadata):
 
-        return float(url_metadata["dmoz_domain_exists"])
+        return float(bool(url_metadata["domain"].dmoz_title))

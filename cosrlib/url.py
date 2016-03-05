@@ -34,7 +34,7 @@ class URL(object):
         if href.startswith("http://") or href.startswith("https://"):
             return href
         elif href.startswith("/") and not href.startswith("//"):
-            return self.homepage + href[1:]
+            return self.homepage + href
         else:
             return urlparse.urljoin(self.url, href)
 
@@ -56,7 +56,10 @@ class URL(object):
                 "",
                 self.parsed.query,
                 ""
-            ))[2:]
+            )).lstrip("/")
+
+            if value.count("/") == 1:
+                value = value.strip("/")
 
         elif attr == "normalized_without_query":
             value = urlparse.urlunparse((
@@ -66,7 +69,10 @@ class URL(object):
                 "",
                 "",
                 ""
-            ))[2:]
+            )).lstrip("/")
+
+            if value.count("/") == 1:
+                value = value.strip("/")
 
         elif attr == "homepage":
             value = urlparse.urlunparse((
@@ -76,7 +82,7 @@ class URL(object):
                 "",
                 "",
                 ""
-            ))
+            )).strip("/")
 
         # Pay-level domain
         elif attr == "pld":

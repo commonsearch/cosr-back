@@ -23,15 +23,24 @@ build_source_export:
 
 # Downloads real data files and converts them to usable formats (RocksDB mostly)
 import_local_data:
-	python scripts/import_alexa_top1m.py
-	python scripts/import_dmoz.py
-	python scripts/import_webdatacommons_hc.py
-	python scripts/import_ut1_blacklist.py
+
+	# We have to use a temporary directory to build the data because virtualbox shares don't support directory fsync for rocksdb
+	rm -rf local-data/urlserver-rocksdb
+	rm -rf /tmp/cosrlocaldata
+	mkdir -p /tmp/cosrlocaldata
+	COSR_PATH_LOCALDATA=/tmp/cosrlocaldata python urlserver/import.py
+	mv /tmp/cosrlocaldata/urlserver-rocksdb local-data/urlserver-rocksdb
+	rm -rf /tmp/cosrlocaldata
+
 	if [ -z "$(COSR_TESTDATA)" ]; then ./scripts/import_commoncrawl.sh 0; fi
 
 # Imports local mock data from tests
 import_local_testdata:
 	COSR_TESTDATA=1 make import_local_data
+
+# Imports local mock data from tests in Docker
+docker_import_local_testdata:
+	 docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back make import_local_testdata
 
 # Cleans the local source directories
 clean:
@@ -51,6 +60,9 @@ virtualenv:
 
 	venv/bin/pip install -r requirements.txt
 
+# Compiles protocol buffer definitions
+protoc:
+	protoc -I urlserver/protos/ --python_out=urlserver/protos/ urlserver/protos/urlserver.proto
 
 
 #

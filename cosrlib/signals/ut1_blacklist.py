@@ -6,6 +6,9 @@ class Signal(BaseSignal):
 
     def get_value(self, document, url_metadata):
 
-        return {
-            k: 1. for k in (url_metadata["ut1_blacklist_classes"] or [])
-        }
+        classes = {}
+        for data in url_metadata.itervalues():
+            classes.update({
+                k: 1. for k in (data.ut1_blacklist)
+            })
+        return classes

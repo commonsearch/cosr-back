@@ -24,8 +24,14 @@ _defaults = {
     # Environment type: prod, staging, local, ci, ...
     "ENV": "local",
 
+    # Should we use files in tests/testdata/ as datasources? ("0" or "1")
+    "TESTDATA": "0",
+
     # Path to the parent directory of cosrlib
-    "PATH_BACK": os.path.dirname(os.path.dirname(__file__))
+    "PATH_BACK": os.path.dirname(os.path.dirname(__file__)),
+
+    # Path to the local-data directory
+    "PATH_LOCALDATA": os.path.join(os.path.dirname(os.path.dirname(__file__)), "local-data")
 }
 
 _config_file = os.path.normpath(os.path.join(__file__, "../../cosr-config.json"))

@@ -196,35 +196,45 @@ CORPUSES = [
             "url": "http://abcde-example.com/0",
             "content": """<html><title>Example</title> This is a great example of text with title.</html>""",
             "url_metadata_extra": {
-                "alexa_top1m_rank": 1
+                "domain": {
+                    "alexa_top1m": 1
+                }
             }
         },
         {
             "url": "http://abcde-example.com/1",
             "content": """<html><title>Example title</title> This is a great example of text.</html>""",
             "url_metadata_extra": {
-                "alexa_top1m_rank": 100
+                "domain": {
+                    "alexa_top1m": 100
+                }
             }
         },
         {
             "url": "http://abcde-example.com/2",
             "content": """<html><title>Example title</title> This is a great example of text.</html>""",
             "url_metadata_extra": {
-                "alexa_top1m_rank": 10000
+                "domain": {
+                    "alexa_top1m": 10000
+                }
             }
         },
         {
             "url": "http://abcde-example.com/3",
             "content": """<html><title>Example title</title> This is a great example of text.</html>""",
             "url_metadata_extra": {
-                "alexa_top1m_rank": 100000
+                "domain": {
+                    "alexa_top1m": 100000
+                }
             }
         },
         {
             "url": "http://abcde-example.com/4",
             "content": """<html><title>Example</title> This is a great example of text with nothing more to say.</html>""",
             "url_metadata_extra": {
-                "alexa_top1m_rank": 1
+                "domain": {
+                    "alexa_top1m": 1
+                }
             }
         }],
         "explain": False,

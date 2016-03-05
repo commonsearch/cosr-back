@@ -9,7 +9,16 @@ class Signal(BaseSignal):
 
     def get_value(self, document, url_metadata):
 
-        alexa_rank = url_metadata["alexa_top1m_rank"]
+        factor = 1.0
+        alexa_rank = url_metadata["domain"].alexa_top1m
+
+        # Sub-domain matches have a slight penalty
+        # This works well for en.wikipedia.org but not for xxxx.tumblr.com
+        # Ideally we should divide it by the number of known subdomains...
+        if not alexa_rank:
+            factor = 0.7
+            alexa_rank = url_metadata["pld"].alexa_top1m
+
         if not alexa_rank:
             return None
 
@@ -21,4 +30,4 @@ class Signal(BaseSignal):
         # http://www.wolframalpha.com/input/?i=1+-+(ln(x%2B1)%2Fln(1000000))%5E2+with+x+from+0+to+1000
         # http://www.wolframalpha.com/input/?i=1+-+(ln(x%2B1)%2Fln(1000000))%5E2+with+x+from+0+to+1000000
 
-        return 1 - (math.log(float(alexa_rank), max_rank)) ** k1
+        return (1 - (math.log(float(alexa_rank), max_rank)) ** k1) * factor
