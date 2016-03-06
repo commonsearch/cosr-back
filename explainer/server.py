@@ -1,14 +1,11 @@
 # pylint: disable=wrong-import-order
-from gevent import monkey
-monkey.patch_all()
-
+from gevent.wsgi import WSGIServer
 from flask import Flask, request, render_template
 
 import os
 import sys
 import json
 import requests
-from werkzeug.serving import run_simple
 
 sys.path.insert(0, os.getcwd())
 
@@ -110,8 +107,8 @@ def main():
     if config["ENV"] == "local":
         app.debug = True
     print "Explainer listening on http://%s" % config["EXPLAINER"]
-    run_simple(config["EXPLAINER"].split(":")[0], int(config["EXPLAINER"].split(":")[1]), app)
-
+    http_server = WSGIServer(config["EXPLAINER"].split(":")[0], int(config["EXPLAINER"].split(":")[1]), app)
+    http_server.serve_forever()
 
 if __name__ == '__main__':
     main()
