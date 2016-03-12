@@ -52,7 +52,7 @@ class ElasticsearchBulkIndexer(object):
         """ Empty the ES index. Dangerous operation! """
 
         if config["ENV"] not in ("local", "ci"):
-            raise Exception("Empty() not allowed in env %s" % config["ENV"])
+            raise Exception("empty() not allowed in env %s" % config["ENV"])
 
         if self.indices().exists(index=self.index_name):
             self.indices().delete(index=self.index_name)
@@ -61,7 +61,7 @@ class ElasticsearchBulkIndexer(object):
         """ Sends a "refresh" to the ES index, forcing the actual indexing of what was sent up until now """
 
         if config["ENV"] not in ("local", "ci"):
-            raise Exception("Refresh() not allowed in env %s" % config["ENV"])
+            raise Exception("refresh() not allowed in env %s" % config["ENV"])
 
         self.indices().refresh(index=self.index_name)
 

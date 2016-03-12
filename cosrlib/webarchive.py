@@ -92,10 +92,12 @@ def create_warc_from_corpus(documents, filename=None):
 
     for doc in documents:
 
-        payload = (
-            "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n" +
-            doc["content"]
-        )
+        headers = "Connection: close\r\nContent-Type: text/html"
+        if "headers" in doc:
+            headers = "\r\n".join(["%s: %s" % (k, v) for k, v in doc["headers"].iteritems()])
+
+        payload = "HTTP/1.1 200 OK\r\n" + headers + "\r\n\r\n" + doc["content"]
+
         record = warc.WARCRecord(payload=payload, headers={
             "Content-Type": "application/http; msgtype=response",
             "WARC-Type": "response",

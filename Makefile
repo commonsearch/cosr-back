@@ -65,6 +65,15 @@ virtualenv:
 protoc:
 	protoc -I urlserver/protos/ --python_out=urlserver/protos/ urlserver/protos/urlserver.proto
 
+# Generates a small index for developement & uploads it to S3
+devindex: restart_services
+	sleep 30
+	docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back python scripts/build_devindex.py --index --empty
+	sleep 10
+	docker exec -t -i `docker ps | awk '$$2=="commonsearch/local-elasticsearch" {print $$1}'` sh -c 'cd /usr/share/elasticsearch && tar zcf /tmp/cosr-es-devindex.tar.gz ./data'
+	docker cp `docker ps | awk '$$2=="commonsearch/local-elasticsearch" {print $$1}'`:/tmp/cosr-es-devindex.tar.gz /tmp/
+	s3cmd --acl-public --reduced-redundancy --multipart-chunk-size-mb=5 put /tmp/cosr-es-devindex.tar.gz s3://dumps.commonsearch.org/devindex/elasticsearch-data.tar.gz
+
 
 #
 # Day-to-day use commands
@@ -76,7 +85,11 @@ docker_shell:
 
 # Stops all docker containers on this machine
 docker_stop_all:
-	bash -c 'docker ps | tail -n +2 | cut -d " " -f 1 | xargs docker stop -t=0'
+	bash -c 'docker ps -q | xargs docker stop -t=0'
+
+# Cleans up leftover Docker images
+docker_clean:
+	docker rmi $(docker images -aq)
 
 # Starts local services
 start_services:

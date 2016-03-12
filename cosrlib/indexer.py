@@ -49,7 +49,8 @@ class Indexer(object):
             self.index_document(
                 doc["content"],
                 url=doc.get("url"),
-                url_metadata_extra=doc.get("url_metadata_extra")
+                url_metadata_extra=doc.get("url_metadata_extra"),
+                headers=doc.get("headers")
             )
             for doc in docs
         ]
@@ -90,7 +91,8 @@ class Indexer(object):
         if url_metadata_extra:
             for k, v in url_metadata_extra.iteritems():
                 for item_k, item_v in v.iteritems():
-                    setattr(parsed["url_metadata"][k], item_k, item_v)
+                    if hasattr(parsed["url_metadata"][k], item_k):
+                        setattr(parsed["url_metadata"][k], item_k, item_v)
 
         # Format basic content
         parsed["title_formatted"] = format_title(doc, parsed["url_metadata"])
@@ -128,7 +130,11 @@ class Indexer(object):
         del doc.parser
 
         # Compute global rank
-        rank, _ = self.ranker.get_global_document_rank(doc, parsed["url_metadata"])
+        if "rank" not in url_metadata_extra["url"]:
+            rank, _ = self.ranker.get_global_document_rank(doc, parsed["url_metadata"])
+        else:
+            # Used to bypass rank computation in tests
+            rank = url_metadata_extra["url"]["rank"]
 
         # Insert in Document store
         es_doc = {
