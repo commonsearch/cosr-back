@@ -45,6 +45,17 @@ ES_MAPPINGS = {
                     }
                 },
                 {
+                    "paid_domain_words": {
+                        "match": "paid_domain_words",
+                        "mapping": {
+                            "type": "string",
+                            "store": False,
+                            "doc_values": False,
+                            "similarity": "title_bm25"
+                        }
+                    }
+                },
+                {
                     "domain": {
                         "match": "domain",
                         "mapping": {

@@ -65,10 +65,10 @@ class Searcher(object):
             "must": {
                 "multi_match": {
                     "query": q,
-                    "minimum_should_match": "75%",
+                    "minimum_should_match": "-25%",
                     "type": "cross_fields",
                     "tie_breaker": 0.5,
-                    "fields": ["title^3", "body", "url_words^2", "domain_words^8"]
+                    "fields": ["title^3", "body", "url_words^2", "domain_words^4", "paid_domain_words^8"]
                 }
             }
         }

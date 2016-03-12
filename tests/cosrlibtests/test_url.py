@@ -18,6 +18,9 @@ def test_url():
     assert URL("http://sub.test.co.uk?x=a#b").suffix == "co.uk"
     assert URL("http://sub.test.co.uk?x=a#b").pld == "test.co.uk"
 
+    assert URL("http://www.sub.test.co.uk?x=a#b").subdomain == "www.sub"
+    assert URL("http://www.sub.test.co.uk?x=a#b").normalized_subdomain == "sub"
+
     assert URL("http://sub.test.co.uk/azerza/azer.html?x=a#b").homepage == "http://sub.test.co.uk"
 
     assert URL('http://dc.weber.edu/\xc3\xaf\xc2\xbf\xc2\xbd/field/?a=b&c=d&e=\xc3\xaf\xc2\xbf\xc2\xbd#qq', check_encoding=True).url == "http://dc.weber.edu/%C3%AF%C2%BF%C2%BD/field/?a=b&c=d&e=%C3%AF%C2%BF%C2%BD#qq"

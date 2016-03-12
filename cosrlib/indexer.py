@@ -78,10 +78,13 @@ class Indexer(object):
             "url": doc.get_url(),
 
             # Splitted words in the URL
-            "url_words": doc.get_url_words(with_paid_domain=False)[0:50],
+            "url_words": doc.get_path_words()[0:50],
+
+            # Splitted words in the URL
+            "domain_words": doc.get_domain_words()[-10:],
 
             # Splitted words in the paid domain
-            "domain_words": doc.get_domain_paid_words()[0:10]
+            "paid_domain_words": doc.get_domain_paid_words()[-10:]
         }
 
         # Get metadata from the URLServer
@@ -107,12 +110,19 @@ class Indexer(object):
             parsed["domain_words"],
             [parsed["title_formatted"], parsed["summary_formatted"]]
         )
+        inferred_paid_domain_words = infer_subwords(
+            parsed["paid_domain_words"],
+            [parsed["title_formatted"], parsed["summary_formatted"]]
+        )
 
         if parsed["url_words"] != inferred_url_words:
             parsed["url_words_inferred"] = inferred_url_words
 
         if parsed["domain_words"] != inferred_domain_words:
             parsed["domain_words_inferred"] = inferred_domain_words
+
+        if parsed["paid_domain_words"] != inferred_paid_domain_words:
+            parsed["paid_domain_words_inferred"] = inferred_paid_domain_words
 
         return parsed
 
@@ -130,11 +140,13 @@ class Indexer(object):
         del doc.parser
 
         # Compute global rank
-        if "rank" not in url_metadata_extra["url"]:
-            rank, _ = self.ranker.get_global_document_rank(doc, parsed["url_metadata"])
-        else:
-            # Used to bypass rank computation in tests
+        if url_metadata_extra and "rank" in url_metadata_extra.get("url", {}):
+
+            # Used mostly to bypass rank computation in tests
             rank = url_metadata_extra["url"]["rank"]
+
+        else:
+            rank, _ = self.ranker.get_global_document_rank(doc, parsed["url_metadata"])
 
         # Insert in Document store
         es_doc = {
@@ -150,6 +162,11 @@ class Indexer(object):
                 [parsed["domain_words"], parsed["domain_words_inferred"]]
                 if parsed.get("domain_words_inferred")
                 else parsed["domain_words"]
+            ),
+            "paid_domain_words": (
+                [parsed["paid_domain_words"], parsed["paid_domain_words_inferred"]]
+                if parsed.get("paid_domain_words_inferred")
+                else parsed["paid_domain_words"]
             ),
             "domain": parsed["url"].normalized_domain,
             "url_words": (

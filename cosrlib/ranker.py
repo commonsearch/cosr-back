@@ -25,6 +25,7 @@ class Ranker(object):
             # TODO: should this be a part of the same rank? Or should we split popularity & url simplicity?
             "url_total_length": 0.01,
             "url_path_length": 0.01,
+            "url_subdomain": 0.1,
 
             "alexa_top1m": 5,
             "dmoz_domain": 1,

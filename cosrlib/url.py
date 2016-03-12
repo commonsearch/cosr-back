@@ -91,11 +91,20 @@ class URL(object):
         elif attr == "domain":
             value = self.parsed.netloc
 
+        elif attr == "subdomain":
+            value = self.tldextracted.subdomain
+
         elif attr == "normalized_domain":
             if self.domain.startswith("www."):
                 value = self.domain[4:]
             else:
                 value = self.domain
+
+        elif attr == "normalized_subdomain":
+            if self.subdomain.startswith("www."):
+                value = self.subdomain[4:]
+            else:
+                value = self.subdomain
 
         # https://en.wikipedia.org/wiki/Public_Suffix_List
         # Returns the domain name suffix ("co.uk" for "bbc.co.uk")

@@ -133,20 +133,23 @@ CORPUSES = [
         "id": "multiple_terms_simple",
         "desc": "Test relevance with multiple terms",
         "docs": [{
-            "url": "http://example.com/1",
+            "url": "http://sub.example.com/1",
             "content": """<html><title>Example</title> This is a great example of text.</html>"""
         }, {
-            "url": "http://example.com/2",
+            "url": "http://sub.example.com/2",
             "content": """<html><title>Example text</title> This is a great example.</html>"""
         }, {
-            "url": "http://example.com/text",
+            "url": "http://sub.example.com/text",
             "content": """<html><title>Example text</title> This is a great example.</html>"""
         }, {
-            "url": "http://text.example.com/",
+            "url": "http://sub.text.example.com/",
             "content": """<html><title>Example text</title> This is a great example.</html>"""
         }, {
-            "url": "http://a-larger-example-url.com/",
+            "url": "http://sub.a-larger-example-url.com/",
             "content": """<html><title>No good title</title> This is a great example text.</html>"""
+        }, {
+            "url": "http://sub.a-larger-aaaa-url.com/",
+            "content": """<html><title>No match at all</title> This is a great aaaa dddd.</html>"""
         }],
         "explain": False,
         "searches": {
@@ -155,6 +158,34 @@ CORPUSES = [
                 "example text": [3, 2, 1, 0, 4],
                 "text example": [3, 2, 1, 0, 4],
                 "text": [3, 2, 1, 0, 4]
+            }
+        }
+    },
+    {
+        "id": "multiple_terms_simple2",
+        "desc": "Test relevance with multiple terms (2)",
+        "docs": [{
+            "url": "http://www.aaaa.bbbb.com/",
+            "content": """<html><title>title</title> Body cccc</html>"""
+        }, {
+            "url": "http://www.eeee.ddd.bbbb.qc.ca/",
+            "content": """<html><title>Title aaaa</title> Body cccc dddd aaaa</html>"""
+        },
+
+        # These won't match but can mess with the norms
+        {
+            "url": "http://zzzz.bbbb.com/",
+            "content": """<html><title>title</title> Body cccc</html>"""
+        }, {
+            "url": "http://yyyy.bbbb.com/2",
+            "content": """<html><title>title</title> Body dddd</html>"""
+        }
+        ],
+        "explain": True,
+        "searches": {
+            None: {
+                "aaaa bbbb": [0, 1],
+                "aaaa bbbb title body cccc": [0, 1, 2]
             }
         }
     },
@@ -241,7 +272,7 @@ CORPUSES = [
         "searches": {
             None: {
                 "example": [0, 4, 1, 2, 3],
-                "example title": [1, 2, 0, 3, 4]
+                "example title": [1, 2, 0, 3]
             }
         }
     },
@@ -249,35 +280,35 @@ CORPUSES = [
         "id": "test_partial_url_match",
         "desc": "Test partial matching on URLs and domains",
         "docs": [{
-            "url": "http://www.example.com/0-page-link",
+            "url": "http://www.sub.example.com/0-page-link",
             "content": """<html><title>Example Text!</title> Body</html>"""
         },
         {
-            "url": "http://text.example.com/1-page-link",
+            "url": "http://sub.text.example.com/1-page-link",
             "content": """<html><title>Example Text!</title> Body</html>"""
         },
         {
-            "url": "http://textexample.com/2-abcd-efgh",
+            "url": "http://sub.textexample.com/2-abcd-efgh",
             "content": """<html><title>Example Text!</title> Body</html>"""
         },
         {
-            "url": "http://mytextexample.com/3-abcd-efgh",
+            "url": "http://sub.mytextexample.com/3-abcd-efgh",
             "content": """<html><title>Example Text!</title> Body</html>"""
         },
         {
-            "url": "http://mytextnexample.com/4-abcd-efgh",
+            "url": "http://sub.mytextnexample.com/4-abcd-efgh",
             "content": """<html><title>Example Text!</title> Body</html>"""
         },
         {
-            "url": "http://otherdomain.com/5-text-example.html",
+            "url": "http://sub.otherdomain.com/5-text-example.html",
             "content": """<html><title>Example Text!</title> Body</html>"""
         },
         {
-            "url": "http://otherdomain.com/6-textexample.html",
+            "url": "http://sub.otherdomain.com/6-textexample.html",
             "content": """<html><title>Example Text!</title> Body</html>"""
         },
         {
-            "url": "http://textexample.com/7-abcd-efgf",
+            "url": "http://sub.textexample.com/7-abcd-efgf",
             "content": """<html><title>Other title</title> Body</html>"""
         }],
         "explain": False,
