@@ -99,6 +99,10 @@ class URL(object):
                 value = self.domain[4:]
             else:
                 value = self.domain
+            if value.endswith(':80'):
+                value = value[:-3]
+            elif value.endswith(':443'):
+                value = value[:-4]
 
         elif attr == "normalized_subdomain":
             if self.subdomain.startswith("www."):
