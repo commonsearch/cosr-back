@@ -9,3 +9,7 @@
 /src
 *.pyc
 __pycache__
+/coverage.xml
+/.coverage
+/htmlcov
+/.coverage.*

@@ -1,0 +1,6 @@
+# .coveragerc to control coverage.py
+# See http://coverage.readthedocs.org/
+[run]
+branch = True
+concurrency = gevent
+parallel = true

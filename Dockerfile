@@ -128,7 +128,7 @@ RUN wget https://codeload.github.com/google/protobuf/tar.gz/v${PROTOBUF_VERSION}
 ADD requirements.txt /requirements.txt
 
 # Upgrade pip because debian has a really old version
-RUN pip install --upgrade pip
+RUN pip install --upgrade --ignore-installed pip
 
 # Cython must be installed prior to gumbocy. TODO: how to fix that?
 RUN grep -i Cython /requirements.txt | xargs pip install

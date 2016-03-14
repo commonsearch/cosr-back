@@ -44,12 +44,19 @@ docker_import_local_testdata:
 	 docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back make import_local_testdata
 
 # Cleans the local source directories
-clean:
+clean: clean_coverage
 	find . -name "*.pyc" | xargs rm -f
 	find tests/ -name "__pycache__" | xargs rm -rf
 	find cosrlib/ -name "*.so" | xargs rm -f
 	find cosrlib/ -name "*.c" | xargs rm -f
 	rm -rf .cache
+
+# Removes all coverage data
+clean_coverage:
+	rm -f .coverage
+	rm -f .coverage.*
+	rm -rf htmlcov
+	rm -f coverage.xml
 
 # Creates a local Python virtualenv with all required modules installed
 virtualenv:
@@ -132,8 +139,17 @@ docker_explainer:
 test: import_local_testdata
 	PYTHONDONTWRITEBYTECODE=1 py.test tests -v
 
+# Runs all tests with coverage info
+test_coverage: clean_coverage
+	COV_CORE_CONFIG=$(PWD)/.coveragerc COV_CORE_DATAFILE=$(PWD)/.coverage COV_CORE_SOURCE=$(PWD)/cosrlib:$(PWD)/urlserver:$(PWD)/jobs make import_local_testdata
+	PYTHONDONTWRITEBYTECODE=1 py.test --cov-append --cov=cosrlib --cov=urlserver --cov=jobs --cov-report html --cov-report xml --cov-report term tests/ -v
+	rm -f .coverage.*
+
 docker_test:
 	docker run -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
+
+docker_test_coverage:
+	docker run -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
 
 pylint:
 	PYTHONPATH=. pylint cosrlib urlserver jobs explainer
