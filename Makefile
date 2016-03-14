@@ -143,14 +143,14 @@ test: import_local_testdata
 test_coverage: clean_coverage
 	COV_CORE_CONFIG=$(PWD)/.coveragerc COV_CORE_DATAFILE=$(PWD)/.coverage COV_CORE_SOURCE=$(PWD)/cosrlib:$(PWD)/urlserver:$(PWD)/jobs make import_local_testdata
 	PYTHONDONTWRITEBYTECODE=1 py.test --cov-append --cov=cosrlib --cov=urlserver --cov=jobs --cov-report html --cov-report xml --cov-report term tests/ -v
-	rm -f .coverage.*
+	mv .coverage.* .coverage
 	coveralls || true
 
 docker_test:
-	docker run -e TRAVIS -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
+	docker run -e TRAVIS -e TRAVIS_BRANCH -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
 
 docker_test_coverage:
-	docker run -e TRAVIS -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
+	docker run -e TRAVIS -e TRAVIS_BRANCH -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
 
 pylint:
 	PYTHONPATH=. pylint cosrlib urlserver jobs explainer
