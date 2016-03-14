@@ -147,10 +147,10 @@ test_coverage: clean_coverage
 	coveralls || true
 
 docker_test:
-	docker run -TRAVIS -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
+	docker run -e TRAVIS -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
 
 docker_test_coverage:
-	docker run -TRAVIS -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
+	docker run -e TRAVIS -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
 
 pylint:
 	PYTHONPATH=. pylint cosrlib urlserver jobs explainer
