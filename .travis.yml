@@ -20,6 +20,3 @@ before_install:
 script:
   - make docker_pylint
   - make docker_test_coverage
-
-after_success:
-  - coveralls
