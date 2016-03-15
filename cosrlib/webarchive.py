@@ -3,6 +3,7 @@ import tempfile
 
 import warc
 from boto.s3.key import Key
+import boto.s3.connection
 import boto
 try:
     from http_parser.parser import HttpParser
@@ -35,7 +36,13 @@ def open_warc_file(filename, from_commoncrawl=True):
     elif os.path.isfile(local_data_file):
         filereader = open(local_data_file, "rb")
     else:
-        conn = boto.connect_s3(anon=True)
+        conn = boto.s3.connect_to_region(
+            "us-east-1",
+            anon=True,
+            calling_format=boto.s3.connection.OrdinaryCallingFormat(),
+            is_secure=False
+        )
+
         pds = conn.get_bucket('aws-publicdatasets')
         filereader = Key(pds)
         filereader.key = filename
