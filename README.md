@@ -63,6 +63,7 @@ py.test tests/cosrlibtests/document/html/ -v --repeat 50 --profile
 ## Launching an index job
 
 ```
+./scripts/import_commoncrawl.sh 0
 spark-submit jobs/spark/index.py --warc_limit 1 --only_homepages --profile
 ```
 
