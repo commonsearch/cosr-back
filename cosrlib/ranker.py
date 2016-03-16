@@ -28,8 +28,12 @@ class Ranker(object):
             "url_subdomain": 0.1,
 
             "alexa_top1m": 5,
+
+            "wikidata_url": 3,
+
             "dmoz_domain": 1,
             "dmoz_url": 1,
+
             "webdatacommons_hc": 1
         }
 

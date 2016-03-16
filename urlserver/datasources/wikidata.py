@@ -32,5 +32,6 @@ class DataSource(BaseDataSource):
         if official_website:
             yield official_website, {
                 "wikidata_title": label_en,
-                "wikidata_description": description_en
+                "wikidata_description": description_en,
+                "wikidata_sitelinks": len(row.get("sitelinks") or [])
             }

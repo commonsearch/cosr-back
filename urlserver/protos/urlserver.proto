@@ -10,6 +10,7 @@ message UrlMetadata {
 	float webdatacommons_hc = 7;
 	string wikidata_title = 8;
 	string wikidata_description = 9;
+	int32 wikidata_sitelinks = 10;
 }
 
 message UrlId {

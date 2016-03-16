@@ -5,7 +5,8 @@ def test_get_global_document_rank_url(ranker):
         r, _ = ranker.client.get_global_url_rank(url)
         return r
 
-    assert 1 >= rank("http://google.com") > 0.9
+    # Google isn't in our wikidata dump
+    assert 1 >= rank("http://google.com") > 0.5
 
     # Facebook isn't in our DMOZ dump
     assert rank("http://google.com") > rank("http://facebook.com") > 0.1
