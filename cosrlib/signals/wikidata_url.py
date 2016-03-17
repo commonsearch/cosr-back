@@ -1,5 +1,6 @@
-from . import BaseSignal
 import math
+
+from . import BaseSignal
 
 
 class Signal(BaseSignal):
