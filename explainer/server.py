@@ -107,7 +107,8 @@ def main():
     if config["ENV"] == "local":
         app.debug = True
     print "Explainer listening on http://%s" % config["EXPLAINER"]
-    http_server = WSGIServer(config["EXPLAINER"].split(":")[0], int(config["EXPLAINER"].split(":")[1]), app)
+    sys.stdout.flush()
+    http_server = WSGIServer((config["EXPLAINER"].split(":")[0], int(config["EXPLAINER"].split(":")[1])), app)
     http_server.serve_forever()
 
 if __name__ == '__main__':
