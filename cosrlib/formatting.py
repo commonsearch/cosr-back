@@ -1,3 +1,4 @@
+import unicodedata
 from cosrlib import re
 
 
@@ -69,6 +70,19 @@ def format_title(document, url_metadata):  # pylint: disable=unused-argument
             title = (" ".join(domain_paid_words)).title()
         else:
             return ""
+
+    # Check if the title is likely to contain Unicode and
+    # thus need additional formatting.
+    is_ascii = False
+    try:
+        title.decode('ascii')
+        is_ascii = True
+    except UnicodeDecodeError:
+        pass
+    if not is_ascii:
+        utitle = title.decode('utf8')
+        utitle = [t for t in utitle if 'Cn' not in unicodedata.category(t)]
+        title = ''.join(utitle).encode('utf8')
 
     tokens = _RE_WHITESPLACE.split(title.strip())
     cleaned = " ".join(tokens)

@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 from cosrlib.formatting import format_title, format_summary, infer_subwords
 from cosrlib.document.html import HTMLDocument
 
@@ -6,7 +8,7 @@ def test_format_title():
 
     def format_html_title(title, url=None):
         doc = HTMLDocument("""
-            <html><head><title>%s</title></head><body>Hello</body></html>
+            <html><head><meta charset="UTF-8"><title>%s</title></head><body>Hello</body></html>
         """ % title, url=url)
         doc.parse()
         return format_title(doc, {})
@@ -14,6 +16,12 @@ def test_format_title():
     assert format_html_title("A Title!") == "A Title!"
     assert format_html_title("  A  \n Title\t \t!  ") == "A Title !"
     assert format_html_title("a" * 100) == ("a" * 70) + "..."
+    #
+    # Test that emoji chararacters and symbols are removed from titles
+    emoji_title = u"😋  Super Emoji-Land.com  """
+    emoji_title = emoji_title.encode('utf8')
+    emoji_title = format_html_title(emoji_title)
+    assert emoji_title == "Super Emoji-Land.com"
 
     assert format_html_title(("a" * 60) + " 2345678 1234567") == ("a" * 60) + " 2345678..."
     assert format_html_title(("a" * 60) + " 234567890 1234567") == ("a" * 60) + " 234567890..."
