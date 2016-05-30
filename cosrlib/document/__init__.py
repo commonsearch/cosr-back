@@ -86,18 +86,9 @@ class Document(object):
 
         return self._split_url_words(url.parsed.path)
 
-    def get_domain_words(self, with_paid_domain=True):
+    def get_domain_words(self):
         """ Returns a list of words found in the domain """
-
-        if not with_paid_domain:
-            return self._split_url_words(self.source_url.normalized_subdomain)
-        else:
-            return self._split_url_words(self.source_url.normalized_domain)
-
-    def get_domain_paid_words(self):
-        """ Returns a list of words found in the paid-level domain """
-        url = self.source_url.tldextracted.domain
-        return self._split_url_words(url)
+        return self._split_url_words(self.source_url.normalized_domain)
 
     def get_url_words(self):
         """ Returns a list of words found in the URL """
