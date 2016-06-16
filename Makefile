@@ -96,7 +96,9 @@ docker_stop_all:
 
 # Cleans up leftover Docker images
 docker_clean:
-	docker rmi $(docker images -aq)
+	docker rm -v $$(docker ps -a -q -f status=exited) || true
+	docker rmi $$(docker images -aq) || true
+
 
 # Starts local services
 start_services:
@@ -125,10 +127,9 @@ reindex10:
 	./scripts/elasticsearch_reset.py --delete
 	spark-submit jobs/spark/index.py --warc_limit 10
 
-# Run the explainer web service
+# Run the explainer web service inside Docker
 docker_explainer:
 	docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -p 9703:9703  -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS commonsearch/local-back python explainer/server.py
-
 
 
 #

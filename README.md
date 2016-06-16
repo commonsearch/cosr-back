@@ -19,18 +19,11 @@ Here is how they fit in our [general architecture](https://about.commonsearch.or
 
 ![General technical architecture of Common Search](https://about.commonsearch.org/images/developer/architecture-2016-02.svg)
 
-## Local install with Docker
 
-Running `cosr-back` on your local machine is very simple. You only need to have [Docker](https://docs.docker.com/engine/installation/) installed.
+## Local install
 
-Once Docker is launched, just run:
+A complete guide available in [INSTALL.md](INSTALL.md).
 
-```
-make start_services
-make docker_shell
-```
-
-You will enter the main container with the ability to run the tests or launch Spark jobs.
 
 ## Launching the tests
 
@@ -60,6 +53,7 @@ If you want to evaluate the speed of a component, for instance HTML parsing, you
 py.test tests/cosrlibtests/document/html/ -v --repeat 50 --profile
 ```
 
+
 ## Launching an index job
 
 ```
@@ -68,6 +62,7 @@ spark-submit jobs/spark/index.py --warc_limit 1 --only_homepages --profile
 ```
 
 After this, if you have a `cosr-front` instance connected to the same Elasticsearch service, you will see the results!
+
 
 ## Launching the explainer
 
@@ -79,15 +74,3 @@ make docker_explainer
 
 Then open [http://192.168.99.100:9703](http://192.168.99.100:9703) in your browser (Assuming `192.168.99.100` is the IP of your Docker host)
 
-## Alternate install without Docker
-
-If for some reason you don't want to use Docker, you might be able to use your local Python install to run `cosr-back`. Please note that this is an unsupported method and might break at any time.
-
-You would have to install the dependencies manually: Spark (symlinked in ./spark/), rocksdb, gumbo. Then:
-
-```
-make virtualenv
-source venv/bin/activate
-make import_local_testdata
-make test
-```
