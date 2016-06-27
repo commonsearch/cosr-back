@@ -1,8 +1,10 @@
 import pytest
 from cosrlib.url import URL
+from cosrlib.document import Document
 
 
 def test_url():
+    assert URL("http://nourd.gouv.fr").normalized == "nourd.gouv.fr"
     assert URL("https://www.test.com").normalized == "test.com"
     assert URL("https://www.test.com?").normalized == "test.com"
     assert URL("https://www.test.com?").normalized_domain == "test.com"
@@ -36,3 +38,8 @@ def test_normalize(url, normalized_domain, normalized):
     _url = URL(url)
     assert _url.normalized_domain == normalized_domain
     assert _url.normalized == normalized
+
+def test_get_domain_words():
+    url = "http://nourd.gouv.fr"
+    d = Document([], url=URL(url))
+    assert d.get_domain_words() == ["nourd", "gouv", "fr"]
