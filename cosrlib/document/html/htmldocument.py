@@ -25,6 +25,11 @@ class HTMLDocument(Document):
         self.encoding = HTMLEncoding(self)
         self.parser = None
 
+    def discard_source_data(self):
+        """ Remove source_data from memory """
+        del self.source_data
+        del self.parser
+
     def reset(self):
         """ Reset the tree traversal properties """
 
@@ -78,6 +83,8 @@ class HTMLDocument(Document):
         for node in nodes:
 
             # node is a tuple: (level, tag_name, attributes) or (level, None, text_content)
+
+            # print " " * node[0], node
 
             # This new node is higher in the tree than the previous one: close some tags!
             if node[0] <= self.current_level:
@@ -174,7 +181,7 @@ class HTMLDocument(Document):
                         self.add_word_group(" ".join(self._split_filename_words(attrs["src"])), tag="img")
 
             # Does this element start a hidden subtree?
-            if self.level_hidden is None and self._guess_element_hidden(attrs):
+            if self.level_hidden is None and attrs and self._guess_element_hidden(attrs):
                 self.level_hidden = level
 
             # Are we in a boilerplate subtree with a bypass tag? (like a title in a header)
@@ -188,7 +195,13 @@ class HTMLDocument(Document):
 
             # Does this element start a hyperlink subtree?
             # TODO how to deal with nested a?
-            if tag_name == "a" and attrs.get("rel") != "nofollow" and attrs.get("href"):
+            if (
+                    tag_name == "a" and
+                    attrs.get("rel") != "nofollow" and
+                    attrs.get("href") and
+                    not attrs["href"].startswith("javascript:") and
+                    not attrs["href"].startswith("mailto:")
+            ):
                 self.level_hyperlink = level
                 self.link_words = []
                 self.link_href = attrs.get("href")
@@ -273,8 +286,10 @@ class HTMLDocument(Document):
         if not attrs:
             return False
 
-        if attrs.get("class") and defs.CLASSES_BOILERPLATE.intersection(attrs["class"]):
-            return True
+        if attrs.get("class"):
+            for k in attrs.get("class"):
+                if k in defs.CLASSES_BOILERPLATE:
+                    return True
 
         if attrs.get("id") and attrs["id"].lower() in defs.IDS_BOILERPLATE:
             return True
@@ -290,9 +305,6 @@ class HTMLDocument(Document):
             Not intended to combat spam!
         """
 
-        if not attrs:
-            return False
-
         # From the HTML5 spec
         if "hidden" in attrs:
             return True
@@ -303,8 +315,10 @@ class HTMLDocument(Document):
         if attrs.get("id") and attrs["id"].lower() in defs.IDS_HIDDEN:
             return True
 
-        if attrs.get("class") and len(defs.CLASSES_HIDDEN.intersection(attrs["class"])) > 0:
-            return True
+        if attrs.get("class"):
+            for k in attrs.get("class"):
+                if k in defs.CLASSES_HIDDEN:
+                    return True
 
         if attrs.get("style") and _RE_SEARCH_STYLE_HIDDEN.search(attrs["style"]):
             return True

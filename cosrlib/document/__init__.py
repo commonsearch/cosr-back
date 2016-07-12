@@ -45,16 +45,24 @@ class Document(object):
 
         return self
 
+    def discard_source_data(self):
+        """ Remove source_data from memory """
+        return
+
     def get_title(self):
         """ Returns document title, without any cleaning """
         return self._title
 
     def get_all_words(self):
         """ Returns a set with all the words in the document. Mostly used for simple tests """
-
         words = set()
+
+        if self.get_title():
+            words |= set(_RE_SPLIT_WORDS.split(self.get_title().lower()))
+
         for g in self._word_groups:
-            words |= set(_RE_SPLIT_WORDS.split(g["words"]))
+            words |= set(_RE_SPLIT_WORDS.split(g["words"].lower()))
+
         return words
 
     def get_word_groups(self):

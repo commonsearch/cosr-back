@@ -1,21 +1,8 @@
 from mprpc import RPCClient
 
+from urlserver.protos import urlserver_pb2
 from .config import config
 from .url import URL
-from urlserver.protos import urlserver_pb2
-
-
-URLSERVER_FIELDNAMES = {
-    "get_metadata": (
-        "url_id",
-        "domain_id",
-        "alexa_top1m_rank",
-        "dmoz_url_exists",
-        "dmoz_domain_exists",
-        "ut1_blacklist_classes",
-        "webdatacommons_hc_rank"
-    )
-}
 
 
 class URLClientRemote(object):

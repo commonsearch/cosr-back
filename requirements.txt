@@ -1,17 +1,20 @@
-# Used to read Common Crawl's WARC files
+# Used to read WARC files
 warc==0.2.1
 
 # Used for reading WARC (gziped) files as a stream
 -e git+git://github.com/commoncrawl/gzipstream.git@59fa1e1e31e5278dc11586f7519392212dbd2549#egg=gzipstream
 
 # Used for indexing
-elasticsearch==2.2.0
+elasticsearch==2.3.0
 
 # Used for tests
-pytest==2.9.0
+pytest==2.9.2
 
 # Code coverage for tests
 pytest-cov==2.2.1
+
+# Used to repeat tests N times
+pytest-repeat==0.3.0
 
 # Send code coverage info to coveralls.io
 coveralls==1.1
@@ -23,7 +26,7 @@ tldextract==1.7.5
 mmh3==2.3.1
 
 # Popular Python module for HTTP requests.
-requests==2.9.1
+requests==2.10.0
 
 # Used to write & read data files from disk in URLServer
 pyrocksdb==0.4
@@ -32,10 +35,10 @@ pyrocksdb==0.4
 ujson==1.35
 
 # Used for linting Python code
-pylint==1.5.4
+pylint==1.6.1
 
 # Used to detect language from pages
-cld2-cffi==0.1.1
+-e git+git://github.com/commonsearch/cld2-cffi.git@f1567ff448a8d9a801e825ef030a90fa3d3c26d3#egg=cld2-cffi
 
 # Used to map charsets coming from the web to valid Python charsets
 webencodings==0.4
@@ -50,19 +53,23 @@ cchardet==1.0.0
 http_parser==0.8.3
 
 # Gumbo binding for HTML parsing
--e git+git://github.com/commonsearch/gumbocy.git@207653489c54e48ba464fb14bc59765d35dd41c2#egg=gumbocy
+-e git+git://github.com/commonsearch/gumbocy.git@8e864c8ecfd2288ac1e71345e42e081e24ee74a6#egg=gumbocy
 
-# Used for performance improvements
-Cython==0.23.4
+# Used for performance improvements in critical parts of the code
+Cython==0.24
 
 # Used to interact with AWS
-boto==2.39.0
+boto==2.41.0
 
 # Used in URLServer to serve requests in parallel
-gevent==1.1rc3
+gevent==1.1.1
 
 # Used for the Explainer service
-Flask==0.10.1
+Flask==0.11.1
 
 # Used for URLServer data storage & exchange
-protobuf==3.0.0b2
+protobuf==3.0.0b3
+
+# Performance-focused replacement for urlparse
+# -e git+git://github.com/commonsearch/urlparse4.git@99e877ef7385ec2f384e405e3de240e2097ff540#egg=urlparse4
+urlparse4==0.1.3

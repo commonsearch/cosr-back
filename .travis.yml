@@ -4,9 +4,11 @@ services:
   - docker
 
 before_install:
+  - ./scripts/git-set-file-times
   - docker pull commonsearch/local-elasticsearch
   - docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
   - docker pull commonsearch/local-back
+  - docker build -t commonsearch/local-back .
   - docker ps
   - docker info
   - docker version

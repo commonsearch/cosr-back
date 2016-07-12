@@ -10,12 +10,12 @@
 WARC_COUNT=${1:-1}
 
 # Common Crawl ID. See http://blog.commoncrawl.org/ for latest dumps
-COMMONCRAWL_ID=${COMMONCRAWL_ID:-CC-MAIN-2016-07}
+COMMONCRAWL_ID=${COMMONCRAWL_ID:-CC-MAIN-2016-22}
 
 mkdir -p local-data/common-crawl/crawl-data
 
 echo "Downloading file list from Common Crawl: $COMMONCRAWL_ID"
-curl 'https://aws-publicdatasets.s3.amazonaws.com/common-crawl/crawl-data/'$COMMONCRAWL_ID'/warc.paths.gz' | gzip -d > local-data/common-crawl/warc.paths.txt
+curl 'https://commoncrawl.s3.amazonaws.com/crawl-data/'$COMMONCRAWL_ID'/warc.paths.gz' | gzip -d > local-data/common-crawl/warc.paths.txt
 
 ccfiles="$(cat local-data/common-crawl/warc.paths.txt | head -$WARC_COUNT)"
 
@@ -29,8 +29,8 @@ do
   else
     echo "Downloading: `basename $f` ..."
     echo "---"
-    curl --create-dirs https://aws-publicdatasets.s3.amazonaws.com/$f -o local-data/$f.tmp
-    mv local-data/$f.tmp local-data/$f
+    curl --create-dirs https://commoncrawl.s3.amazonaws.com/$f -o local-data/common-crawl/$f.tmp
+    mv local-data/common-crawl/$f.tmp local-data/common-crawl/$f
   fi
 done
 

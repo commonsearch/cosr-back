@@ -42,17 +42,15 @@ class Indexer(object):
         self.es_docs.create(empty=True)
         self.es_text.create(empty=True)
 
-    def index_documents(self, docs, flush=False, refresh=False):
-        """ Index a group of documents """
+    def index_corpus(self, corpus, flush=False, refresh=False):
+        """ Index a list of raw html documents. Mostly used in tests """
 
         res = [
             self.index_document(
-                doc["content"],
-                url=doc.get("url"),
-                url_metadata_extra=doc.get("url_metadata_extra"),
-                headers=doc.get("headers")
+                HTMLDocument(doc["content"], url=doc.get("url"), headers=doc.get("headers")),
+                url_metadata_extra=doc.get("url_metadata_extra")
             )
-            for doc in docs
+            for doc in corpus
         ]
 
         if flush:
@@ -126,18 +124,15 @@ class Indexer(object):
 
         return parsed
 
-    def index_document(self, content, headers=None, url=None, links=False, url_metadata_extra=None):
+    def index_document(self, doc, url_metadata_extra=None):
         """ Index one single document """
-
-        doc = HTMLDocument(content, url=url, headers=headers)
 
         parsed = self.parse_document(doc, url_metadata_extra=url_metadata_extra)
 
         docid = parsed["url_metadata"]["url"].id
 
         # Free memory ASAP - we don't need raw data from now on
-        del doc.source_data
-        del doc.parser
+        doc.discard_source_data()
 
         # Compute global rank
         if url_metadata_extra and "rank" in url_metadata_extra.get("url", {}):
@@ -196,7 +191,5 @@ class Indexer(object):
             "url": parsed["url"],
             "rank": rank
         }
-        if links:
-            ret["links"] = doc.get_hyperlinks()
 
         return ret

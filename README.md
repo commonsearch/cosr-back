@@ -57,12 +57,20 @@ py.test tests/cosrlibtests/document/html/ -v --repeat 50 --profile
 ## Launching an index job
 
 ```
-./scripts/import_commoncrawl.sh 0
-spark-submit jobs/spark/index.py --warc_limit 1 --only_homepages --profile
+spark-submit jobs/spark/index.py --source commoncrawl:limit=1 --only_homepages --profile
 ```
 
 After this, if you have a `cosr-front` instance connected to the same Elasticsearch service, you will see the results!
 
+## Using plugins
+
+Common Search supports the insertion of user-provided plugins in the indexation pipeline. Some are included by default, for instance:
+
+```
+spark-submit jobs/spark/index.py --source url:https://about.commonsearch.org/ --plugin 'plugins.grep.Words:words=common search,dir=/tmp/grep_result'
+```
+
+See the [plugins/](plugins/) directory for more examples.
 
 ## Launching the explainer
 

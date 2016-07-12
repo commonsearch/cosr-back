@@ -1,6 +1,6 @@
 import pytest
 from cosrlib.url import URL
-
+import pickle
 
 def test_url():
     assert URL("https://www.test.com").normalized == "test.com"
@@ -36,3 +36,10 @@ def test_normalize(url, normalized_domain, normalized):
     _url = URL(url)
     assert _url.normalized_domain == normalized_domain
     assert _url.normalized == normalized
+
+
+def test_pickling():
+
+    dumped = pickle.dumps(URL("http://sub.test.co.uk/azerza/azer.html?x=a#b"))
+    url = pickle.loads(dumped)
+    assert url.url == "http://sub.test.co.uk/azerza/azer.html?x=a#b"

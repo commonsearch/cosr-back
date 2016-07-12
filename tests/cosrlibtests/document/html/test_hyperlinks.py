@@ -46,6 +46,13 @@ def test_get_hyperlinks():
     assert links[0]["href"].url == "http://sub.test.com/page1?q=2&a=b#xxx"
     assert links[0]["words"] == ["Y"]
 
+    # Invalid URL should be filtered
+    # links = _links("""<html><head><title>Test title</title></head><body>
+    #     <a href="http://www.[wsj-ticker ticker=">Y</a>
+    # </body></html>""", url="http://sub.test.com/page2/x.html")
+    # print links[0]["href"].parsed
+    # assert len(links) == 0
+
 
 def test_get_hyperlinks_base_tag():
 

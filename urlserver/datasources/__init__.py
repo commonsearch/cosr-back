@@ -26,10 +26,13 @@ def list_datasources():
     for datasource in os.listdir(datasource_dir):
         if not datasource.startswith("_") and datasource.endswith(".py"):
             ds_name = datasource.replace(".py", "")
-            ds = importlib.import_module(".%s" % ds_name, package="urlserver.datasources").DataSource(ds_name)
-            datasources[ds_name] = ds
+            datasources[ds_name] = load_datasource(ds_name)
 
     return datasources
+
+
+def load_datasource(name):
+    return importlib.import_module(".%s" % name, package="urlserver.datasources").DataSource(name)
 
 
 class BaseDataSource(object):
@@ -48,7 +51,7 @@ class BaseDataSource(object):
 
     def import_row(self, i, row):
         """ Maps a raw data row into a list of (key, values) pairs """
-        raise NotImplementedError
+        return []
 
     def import_dump(self):
         """ Read a dump from an URL or a local file, and merge its data in RocksDB """
@@ -59,45 +62,44 @@ class BaseDataSource(object):
         batch_time = time.time()
 
         done = 0
-        for i, row in self.iter_dump():
 
-            for key, values in self.import_row(i, row):
+        for key, values in self.iter_rows():
 
-                url = key.encode("utf-8")
+            url = key.encode("utf-8")
 
-                # TODO: RocksDB merge operator?
-                existing_value = db.get(url)
-                existing_pb = urlserver_pb2.UrlMetadata()
-                if existing_value is not None:
-                    existing_pb.ParseFromString(existing_value)
+            # TODO: RocksDB merge operator?
+            existing_value = db.get(url)
+            existing_pb = urlserver_pb2.UrlMetadata()
+            if existing_value is not None:
+                existing_pb.ParseFromString(existing_value)
+            else:
+                # In order to send the protobuf message untouched via RPC, we pre-compute the ID
+                existing_pb.id = make_url_id(URL(url))
+
+            for k, v in values.iteritems():
+                if k in ("ut1_blacklist", ):
+                    for elt in v:
+                        existing_pb.ut1_blacklist.append(elt)  # pylint: disable=no-member
                 else:
-                    # In order to send the protobuf message untouched via RPC, we pre-compute the ID
-                    existing_pb.id = make_url_id(URL(url))
+                    setattr(existing_pb, k, v)
 
-                for k, v in values.iteritems():
-                    if k in ("ut1_blacklist", ):
-                        for elt in v:
-                            existing_pb.ut1_blacklist.append(elt)  # pylint: disable=no-member
-                    else:
-                        setattr(existing_pb, k, v)
+            # print "IMPORT", key, existing_pb
 
-                # print "IMPORT", key, existing_pb
+            write_batch.put(url, existing_pb.SerializeToString())
 
-                write_batch.put(url, existing_pb.SerializeToString())
+            done += 1
 
-                done += 1
-
-                if self.dump_batch_size and (done % self.dump_batch_size) == 0:
-                    print "Done %s (%s/s)" % (done, int(done / (time.time() - batch_time)))
-                    write_batch = db.write_batch(write_batch)
-                    batch_time = time.time()
+            if self.dump_batch_size and (done % self.dump_batch_size) == 0:
+                print "Done %s (%s/s)" % (done, int(done / (time.time() - batch_time)))
+                write_batch = db.write_batch(write_batch)
+                batch_time = time.time()
 
         print "Total rows: %s" % done
         db.write_batch(write_batch)
         db.close()
 
     def iter_dump(self):
-        """ Iterates over the rows of the dump """
+        """ Iterates over the lines of the dump """
 
         f = self.open_dump()
 
@@ -119,7 +121,14 @@ class BaseDataSource(object):
                     yield json.loads(line.strip(",\n"))  # pylint: disable=no-member
             reader = _reader()
 
-        return enumerate(reader)
+        return reader
+
+    def iter_rows(self):
+        """ Iterates over the formatted rows of the dump """
+
+        for i, row in enumerate(self.iter_dump()):
+            for key, values in self.import_row(i, row):
+                yield key, values
 
     def open_dump(self):
         """ Returns a file-like object for the dump """

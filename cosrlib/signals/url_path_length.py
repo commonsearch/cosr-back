@@ -10,7 +10,6 @@ class Signal(BaseSignal):
         url = document.get_url()
         length = (
             len(url.parsed.path) +
-            len(url.parsed.params) +
             len(url.parsed.query) +
             len(url.parsed.fragment)
         )

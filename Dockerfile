@@ -3,7 +3,7 @@ FROM debian:jessie
 # Base image for CommonSearch backend development
 # Uses bits from:
 # https://github.com/gettyimages/docker-spark/blob/master/Dockerfile
-# https://github.com/docker-library/java/blob/master/openjdk-8-jre/Dockerfile
+# https://github.com/docker-library/openjdk/blob/master/8-jre/Dockerfile
 
 #
 # General packages & dependencies
@@ -11,8 +11,8 @@ FROM debian:jessie
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/jre
 ENV LANG C.UTF-8
-ENV JAVA_VERSION 8u72
-ENV JAVA_DEBIAN_VERSION 8u72-b15-1~bpo8+1
+ENV JAVA_VERSION 8u91
+ENV JAVA_DEBIAN_VERSION 8u91-b14-1~bpo8+1
 # see https://bugs.debian.org/775775
 # and https://github.com/docker-library/java/issues/19#issuecomment-70546872
 ENV CA_CERTIFICATES_JAVA_VERSION 20140324
@@ -72,7 +72,7 @@ RUN wget https://github.com/facebook/rocksdb/archive/v${ROCKSDB_VERSION}.tar.gz 
 # Install PyPy for performance testing
 #
 
-RUN curl -L 'https://bitbucket.org/squeaky/portable-pypy/downloads/pypy-4.0.1-linux_x86_64-portable.tar.bz2' -o /pypy.tar.bz2 && \
+RUN curl -L 'https://bitbucket.org/squeaky/portable-pypy/downloads/pypy-5.3.1-linux_x86_64-portable.tar.bz2' -o /pypy.tar.bz2 && \
   mkdir -p /opt/pypy/ && tar jxvf /pypy.tar.bz2 -C /opt/pypy/  --strip-components=1 && \
   rm /pypy.tar.bz2
 
@@ -94,7 +94,7 @@ RUN wget https://github.com/google/gumbo-parser/archive/v${GUMBO_VERSION}.tar.gz
 # Install Spark
 #
 
-ENV SPARK_VERSION 1.6.0
+ENV SPARK_VERSION 1.6.2
 ENV HADOOP_VERSION 2.6
 ENV SPARK_PACKAGE spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION
 ENV SPARK_HOME /usr/$SPARK_PACKAGE
@@ -112,7 +112,7 @@ RUN curl -sL --retry 3 \
 # Install Protocol Buffers
 #
 
-ENV PROTOBUF_VERSION 3.0.0-beta-2
+ENV PROTOBUF_VERSION 3.0.0-beta-3.1
 RUN wget https://codeload.github.com/google/protobuf/tar.gz/v${PROTOBUF_VERSION} && \
   tar zxf v${PROTOBUF_VERSION} && cd protobuf-${PROTOBUF_VERSION} && \
   ./autogen.sh && ./configure && make && make install && ldconfig && \
@@ -129,9 +129,6 @@ ADD requirements.txt /requirements.txt
 
 # Upgrade pip because debian has a really old version
 RUN pip install --upgrade --ignore-installed pip
-
-# Cython must be installed prior to gumbocy. TODO: how to fix that?
-RUN grep -i Cython /requirements.txt | xargs pip install
 
 RUN pip install -r /requirements.txt
 
