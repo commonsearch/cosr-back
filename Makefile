@@ -120,12 +120,12 @@ restart_services: stop_services start_services
 # Reindex 1 WARC file from Common Crawl
 reindex1:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --warc_limit 1
+	spark-submit jobs/spark/index.py --source commoncrawl:limit=1
 
 # Reindex 10 WARC files from Common Crawl
 reindex10:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --warc_limit 10
+	spark-submit jobs/spark/index.py --source commoncrawl:limit=10
 
 # Run the explainer web service inside Docker
 docker_explainer:
@@ -143,7 +143,7 @@ test: import_local_testdata
 # Runs all tests with coverage info
 test_coverage: clean_coverage
 	COV_CORE_CONFIG=$(PWD)/.coveragerc COV_CORE_DATAFILE=$(PWD)/.coverage COV_CORE_SOURCE=$(PWD)/cosrlib:$(PWD)/urlserver:$(PWD)/jobs make import_local_testdata
-	PYTHONDONTWRITEBYTECODE=1 py.test --cov-append --cov=cosrlib --cov=urlserver --cov=jobs --cov-report html --cov-report xml --cov-report term tests/ -v
+	PYTHONDONTWRITEBYTECODE=1 py.test --cov-append --cov=plugins --cov=cosrlib --cov=urlserver --cov=jobs --cov-report html --cov-report xml --cov-report term tests/ -v
 	mv .coverage.* .coverage
 	coveralls || true
 
@@ -154,10 +154,10 @@ docker_test_coverage:
 	docker run -e TRAVIS -e TRAVIS_BRANCH -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
 
 pylint:
-	PYTHONPATH=. pylint cosrlib urlserver jobs explainer
+	PYTHONPATH=. pylint cosrlib urlserver jobs explainer plugins
 
 docker_pylint:
 	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make pylint
 
 todo:
-	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver jobs explainer
+	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver jobs explainer plugins

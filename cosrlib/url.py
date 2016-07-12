@@ -1,6 +1,6 @@
-import urlparse
 import urllib
 import tldextract as _tldextract
+import urlparse4 as urlparse
 
 # TODO init lazily
 _tldextractor = _tldextract.TLDExtract(suffix_list_url=False)
@@ -16,16 +16,15 @@ class URL(object):
             try:
                 self.url.decode('ascii')
             except UnicodeDecodeError:
-                p = urlparse.urlparse(self.url)
+                p = urlparse.urlsplit(self.url)
 
                 # TODO: check the rightfulness of this!
-                self.url = urlparse.urlunparse((
+                self.url = urlparse.urlunsplit((
                     p[0],
                     p[1],
                     urllib.quote(p[2], safe="/"),
-                    urllib.quote(p[3]),
-                    urllib.quote(p[4], safe="&?="),
-                    urllib.quote(p[5])
+                    urllib.quote(p[3], safe="&?="),
+                    urllib.quote(p[4])
                 ))
 
     def urljoin(self, href):
@@ -38,22 +37,31 @@ class URL(object):
         else:
             return urlparse.urljoin(self.url, href)
 
+    # Allow picking/unpickling
+    def __getstate__(self):
+        return self.url
+
+    def __setstate__(self, state):
+        self.url = state
+
     # This is only called when the attribute is still missing
     def __getattr__(self, attr):
         # pylint: disable=redefined-variable-type
 
         if attr == "parsed":
-            value = urlparse.urlparse(self.url)
+            # try:
+            value = urlparse.urlsplit(self.url)
+            # except ValueError:
+            #     value = urlparse.urlsplit("about:blank")
 
         elif attr == "tldextracted":
             value = _tldextractor(self.url)
 
         elif attr == "normalized":
-            value = urlparse.urlunparse((
+            value = urlparse.urlunsplit((
                 None,
                 self.normalized_domain,
                 self.parsed.path if self.parsed.path else "/",
-                "",
                 self.parsed.query,
                 ""
             )).lstrip("/")
@@ -62,11 +70,10 @@ class URL(object):
                 value = value.strip("/")
 
         elif attr == "normalized_without_query":
-            value = urlparse.urlunparse((
+            value = urlparse.urlunsplit((
                 None,
                 self.normalized_domain,
                 self.parsed.path if self.parsed.path else "/",
-                "",
                 "",
                 ""
             )).lstrip("/")
@@ -75,11 +82,10 @@ class URL(object):
                 value = value.strip("/")
 
         elif attr == "homepage":
-            value = urlparse.urlunparse((
+            value = urlparse.urlunsplit((
                 self.parsed.scheme,
                 self.domain,
                 "/",
-                "",
                 "",
                 ""
             )).strip("/")
@@ -116,7 +122,7 @@ class URL(object):
             value = self.tldextracted.suffix
 
         else:
-            raise Exception("Unknown attribute!")
+            raise Exception("Unknown attribute %s !" % attr)
 
         self.__dict__[attr] = value
         return value

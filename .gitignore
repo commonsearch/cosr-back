@@ -13,3 +13,5 @@ __pycache__
 /.coverage
 /htmlcov
 /.coverage.*
+/plugins/local_*
+/*.csv

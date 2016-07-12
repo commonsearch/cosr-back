@@ -29,7 +29,7 @@ sys.path.insert(-1, os.path.dirname(os.path.dirname(__file__)))
 
 import itertools
 import requests
-from cosrlib.webarchive import create_warc_from_corpus
+from cosrlib.documentsources.webarchive import create_warc_from_corpus
 from urlserver.datasources import list_datasources
 from cosrlib.indexer import Indexer
 from cosrlib.config import config
@@ -42,7 +42,7 @@ def get_documents():
     # Add alexa top domains to the documents
     if TOP_ALEXA_DOMAINS > 0:
         alexa_datasource = list_datasources()["alexa_top1m"]
-        for _, row in itertools.islice(alexa_datasource.iter_dump(), 0, TOP_ALEXA_DOMAINS):
+        for row in itertools.islice(alexa_datasource.iter_dump(), 0, TOP_ALEXA_DOMAINS):
             alexa_rank = int(row[0])
             domain = row[1]
             static_rank = 0.5 - (0.0001 * alexa_rank)
@@ -103,7 +103,7 @@ elif "--index" in sys.argv:
     indexer = Indexer()
     if "--empty" in sys.argv:
         indexer.empty()
-    docs = indexer.index_documents(generate_corpus(), flush=True, refresh=True)
+    docs = indexer.index_corpus(generate_corpus(), flush=True, refresh=True)
     print "Indexed %s documents." % len(docs)
 
 else:

@@ -3,9 +3,9 @@ import tempfile
 from collections import defaultdict
 import shutil
 
-from . import BaseDataSource
 from cosrlib.config import config
 from cosrlib.url import URL
+from . import BaseDataSource
 
 
 class DataSource(BaseDataSource):
@@ -18,7 +18,7 @@ class DataSource(BaseDataSource):
     dump_url = "ftp://ftp.ut-capitole.fr/pub/reseau/cache/squidguard_contrib/blacklists.tar.gz"
     dump_batch_size = None
 
-    def iter_dump(self):
+    def iter_rows(self):
         if config["TESTDATA"] == "1":
             extract_dir = self.dump_testdata
             clean = False
@@ -59,8 +59,5 @@ class DataSource(BaseDataSource):
         if clean:
             shutil.rmtree(os.path.dirname(extract_dir))
 
-        return data.iteritems()
-
-    def import_row(self, key, value):
-        """ Maps a raw data row into a list of (key, values) pairs """
-        return [(key, {"ut1_blacklist": value})]
+        for key, value in data.iteritems():
+            yield key, {"ut1_blacklist": value}

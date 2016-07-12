@@ -327,7 +327,7 @@ CORPUSES = [
 def test_ranking_corpuses(corpus_id, corpus_index, indexer, searcher):
     corpus = CORPUSES[corpus_index]
 
-    index_res = indexer.client.index_documents(corpus["docs"], flush=True, refresh=True)
+    index_res = indexer.client.index_corpus(corpus["docs"], flush=True, refresh=True)
 
     docids_map = {
         str(r["docid"]): i for i, r in enumerate(index_res)

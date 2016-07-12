@@ -23,14 +23,13 @@ def test_parsing_samples(sample_name):
         #   print k, g
 
         words = page.get_all_words()
-        lower_words_set = set([w.lower() for w in words])
 
         # Uncomment this to debug
         if metadata.get("debug"):
             print words
 
         for word in metadata.get("assert_words_missing", []):
-            assert word not in lower_words_set
+            assert word not in words
 
         for word in metadata.get("assert_words", []):
-            assert word in lower_words_set
+            assert word in words

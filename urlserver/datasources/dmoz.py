@@ -1,5 +1,5 @@
-from . import BaseDataSource
 from cosrlib.url import URL
+from . import BaseDataSource
 
 
 class DataSource(BaseDataSource):

@@ -12,11 +12,11 @@ import re
 _defaults = {
 
     # HTTP URL of both ElasticSearch servers
-    "ELASTICSEARCHTEXT": "http://192.168.99.100:39200",
-    "ELASTICSEARCHDOCS": "http://192.168.99.100:39200",
+    "ELASTICSEARCHTEXT": "http://172.17.0.1:39200",
+    "ELASTICSEARCHDOCS": "http://172.17.0.1:39200",
 
     # Host:port of the URLserver instance, or "local" for direct import on the same node
-    "URLSERVER": "local",  # "192.168.99.100:9702"
+    "URLSERVER": "local",  # "172.17.0.1:9702"
 
     # Host:port of the Explainer instance
     "EXPLAINER": "0.0.0.0:9703",  # "127.0.0.1:9703"
