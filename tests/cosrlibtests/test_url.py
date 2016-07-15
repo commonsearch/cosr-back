@@ -2,6 +2,7 @@ import pytest
 from cosrlib.url import URL
 import pickle
 
+
 def test_url():
     assert URL("https://www.test.com").normalized == "test.com"
     assert URL("https://www.test.com?").normalized == "test.com"
@@ -26,12 +27,14 @@ def test_url():
 
     assert URL('http://dc.weber.edu/\xc3\xaf\xc2\xbf\xc2\xbd/field/?a=b&c=d&e=\xc3\xaf\xc2\xbf\xc2\xbd#qq', check_encoding=True).url == "http://dc.weber.edu/%C3%AF%C2%BF%C2%BD/field/?a=b&c=d&e=%C3%AF%C2%BF%C2%BD#qq"
 
+    assert URL("http://nord.gouv.fr").normalized == "nord.gouv.fr"
+
 
 @pytest.mark.parametrize('url,normalized_domain,normalized', [
     ('http://example.org:8080/foo', 'example.org:8080', 'example.org:8080/foo'),
     ('http://example.org:80/foo', 'example.org', 'example.org/foo'),
     ('https://example.org:443', 'example.org', 'example.org')
-    ])
+])
 def test_normalize(url, normalized_domain, normalized):
     _url = URL(url)
     assert _url.normalized_domain == normalized_domain
