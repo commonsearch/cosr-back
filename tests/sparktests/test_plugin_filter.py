@@ -35,13 +35,13 @@ CORPUS = {
 
 
 @pytest.mark.elasticsearch
-def test_spark_plugin_filter(searcher, indexer):
+def test_spark_plugin_filter(searcher, indexer, sparksubmit):
 
     # Filters are taken in order.
     # With this, we disable parsing (hence indexation) for all documents by defaults,
     # and then selectively re-enable features with some filters
-    os.system(
-        "spark-submit jobs/spark/index.py " +
+    sparksubmit(
+        "jobs/spark/index.py " +
         " --plugin plugins.filter.All:parse=0 " +
         " --plugin plugins.filter.Homepages:index_body=0 " +
         " --plugin plugins.filter.Domains:domains=example2.com,index_body=1 " +

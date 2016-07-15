@@ -82,6 +82,10 @@ class HTMLDocument(Document):
     def get_title(self):
         return self.analysis.get("title")
 
+    def get_head_metas(self):
+        """ Returns metadata from the document header """
+        return self.analysis.get("head_metas") or {}
+
     def parse_canonical_url(self):
         """ Look for a valid meta tag rel="canonical" in the HEAD of the page.
             Returns an absolute URL in all cases """

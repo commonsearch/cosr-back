@@ -116,6 +116,10 @@ class Document(object):
         """ Returns a list of followable URLs found in the document """
         return self._hyperlinks
 
+    def get_head_metas(self):
+        """ Returns metadata from the document header """
+        return {}
+
     # TODO: validate it's from the same domain?
     def parse_canonical_url(self):
         """ Extract a canonical URL from the document """

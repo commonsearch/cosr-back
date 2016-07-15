@@ -8,7 +8,7 @@ import ujson as json
 
 
 @pytest.mark.elasticsearch
-def test_spark_link_graph(indexer):
+def test_spark_link_graph(indexer, sparksubmit):
 
     linkgraph_dir = tempfile.mkdtemp()
 
@@ -18,7 +18,7 @@ def test_spark_link_graph(indexer):
         domain_b_id = indexer.client.urlclient.get_domain_id("http://example-b.com/")
         domain_c_id = indexer.client.urlclient.get_domain_id("http://example-c.com/")
 
-        os.system("spark-submit jobs/spark/index.py --source corpus:%s  --plugin plugins.linkgraph.DomainToDomain:coalesce=1,dir=%s/rdd/" % (
+        sparksubmit("jobs/spark/index.py --source corpus:%s  --plugin plugins.linkgraph.DomainToDomain:coalesce=1,dir=%s/rdd/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             linkgraph_dir
         ))

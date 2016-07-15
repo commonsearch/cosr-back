@@ -10,6 +10,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
+from cosrlib.config import config
+config["TESTDATA"] = "1"
+config["ENV"] = "ci"
+
 from cosrlib.urlclient import URLClient
 from cosrlib.indexer import Indexer
 from cosrlib.ranker import Ranker
@@ -103,3 +107,11 @@ def urlclient(request):
 @pytest.fixture(scope="function")
 def searcher(request):
     return SearcherFixture(request)
+
+
+@pytest.fixture(scope="function")
+def sparksubmit(request):
+    def _sparksubmit(cmd):
+        os.system("COSR_ENV=ci COSR_TESTDATA=1 spark-submit %s" % cmd)
+
+    return _sparksubmit

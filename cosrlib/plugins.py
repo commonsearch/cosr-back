@@ -51,7 +51,7 @@ def parse_plugin_cli_args(plugin_spec):
     """
 
     if ":" not in plugin_spec:
-        return (plugin_spec, None)
+        return (plugin_spec, {})
 
     plugin_name, raw_args = plugin_spec.split(":", 1)
 
