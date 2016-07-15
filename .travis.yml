@@ -8,6 +8,7 @@ env:
         - DOCKER_VERSION=1.10.1-0~trusty
 
 before_install:
+
   # list docker-engine versions
   - apt-cache madison docker-engine
 
@@ -18,12 +19,18 @@ before_install:
   - docker info
   - docker version
 
-  - ./scripts/git-set-file-times
   - docker pull commonsearch/local-elasticsearch
   - docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
-  - docker pull commonsearch/local-back
-  - docker inspect commonsearch/local-back
-  - docker inspect debian:jessie
+
+  # Docker cannot use the build cache after a pull anymore!
+  # This will make the build much slower until there is a practical workaround :(
+  # https://github.com/docker/docker/issues/20316
+  #
+  # - docker pull commonsearch/local-back
+  # - docker inspect commonsearch/local-back
+  # - docker history commonsearch/local-back
+  # - ./scripts/git-set-file-times
+
   - docker build -t commonsearch/local-back .
   - ps -ef
   - netstat -lpn
