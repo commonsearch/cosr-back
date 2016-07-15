@@ -23,7 +23,7 @@ class DataSource(BaseDataSource):
                     claim["mainsnak"]["datatype"] == "url" and
                     claim["mainsnak"].get("datavalue")
             ):
-                official_website = URL(str(claim["mainsnak"]["datavalue"]["value"])).normalized
+                official_website = URL(claim["mainsnak"]["datavalue"]["value"].encode("utf-8")).normalized
 
         # TODO: other languages!
         label_en = row["labels"].get("en", {}).get("value") or ""

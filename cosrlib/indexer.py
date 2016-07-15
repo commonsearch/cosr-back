@@ -145,7 +145,7 @@ class Indexer(object):
 
         # Insert in Document store
         es_doc = {
-            "url": parsed["url"].url,
+            "url": parsed["url"].url.decode("utf-8"),
             "title": parsed["title_formatted"],
             "summary": parsed["summary_formatted"]
         }
@@ -165,7 +165,7 @@ class Indexer(object):
                 if parsed.get("paid_domain_words_inferred")
                 else parsed["paid_domain_words"]
             ),
-            "domain": parsed["url"].normalized_domain,
+            "domain": parsed["url"].normalized_domain.decode("utf-8", "ignore"),
             "url_words": (
                 [parsed["url_words"], parsed["url_words_inferred"]]
                 if parsed.get("url_words_inferred")

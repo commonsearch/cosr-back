@@ -1,7 +1,8 @@
 import time
 import logging
+import ujson as json
 
-from elasticsearch import Elasticsearch, helpers
+from elasticsearch import Elasticsearch
 from elasticsearch.client import IndicesClient
 from elasticsearch.exceptions import ConnectionTimeout
 
@@ -38,12 +39,8 @@ class ElasticsearchBulkIndexer(object):
         if not self.connected:
             self.connect()
 
-        self.buffer.append({
-            "_index": self.index_name,
-            "_type": "page",
-            "_id": _id,
-            "_source": hit
-        })
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
+        self.buffer.append('{"index":{"_id":"%s"}}\n%s\n' % (_id, json.dumps(hit)))
 
         if len(self.buffer) >= self.batch_size:
             self.flush()
@@ -71,6 +68,9 @@ class ElasticsearchBulkIndexer(object):
         if not self.connected:
             self.connect()
 
+        if len(self.buffer) == 0:
+            return
+
         self.total_size += len(self.buffer)
 
         logging.debug(
@@ -79,7 +79,7 @@ class ElasticsearchBulkIndexer(object):
         )
 
         try:
-            helpers.bulk(self.client, self.buffer, chunk_size=len(self.buffer))
+            self.bulk_index()
         except ConnectionTimeout, e:
             if retries == 0:
                 raise e
@@ -87,6 +87,24 @@ class ElasticsearchBulkIndexer(object):
             return self.flush(retries=retries - 1)
 
         self.buffer = []
+
+    def bulk_index(self):
+        """ Indexes the current buffer to Elasticsearch, bypassing the bulk() helper for performance """
+
+        connection = self.client.transport.get_connection()
+
+        bulk_url = "/%s/page/_bulk" % self.index_name
+
+        body = "".join(self.buffer)
+
+        # TODO retries
+        status, headers, data = connection.perform_request("POST", bulk_url, body=body)
+
+        if status != 200:
+            raise Exception("Elasticsearch returned status=%s" % status)
+
+        # TODO: look for errors there?
+        # parsed = json.loads(data)
 
     def indices(self):
         """ Returns an elasticsearch.client.IndicesClient instance """
