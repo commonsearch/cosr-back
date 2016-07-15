@@ -32,3 +32,13 @@ class Words(Plugin):
             rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))
 
         rdd.saveAsTextFile(self.args["dir"])
+
+
+class TextRegex(Plugin):
+    """ Finds documents matching a regex on their visible text """
+    pass
+
+
+class HTMLRegex(Plugin):
+    """ Finds documents matching a regex on their raw HTML """
+    pass

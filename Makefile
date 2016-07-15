@@ -88,6 +88,7 @@ devindex: restart_services
 
 # Logins into the container
 docker_shell:
+	# -v "$(PWD)/../gumbocy:/cosr/gumbocy:rw"
 	docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
 
 # Stops all docker containers on this machine
@@ -99,6 +100,9 @@ docker_clean:
 	docker rm -v $$(docker ps -a -q -f status=exited) || true
 	docker rmi $$(docker images -aq) || true
 
+start_local_elasticsearch:
+	# sudo ifconfig lo0 alias 10.0.2.2
+	elasticsearch -Dhttp.port=39200 -Dcluster.routing.allocation.disk.threshold_enabled=false -Dnetwork.host=0.0.0.0 -Dnode.local=true -Ddiscovery.zen.ping.multicast.enabled=false -Dnetwork.publish_host=10.0.2.2
 
 # Starts local services
 start_services:
@@ -120,12 +124,18 @@ restart_services: stop_services start_services
 # Reindex 1 WARC file from Common Crawl
 reindex1:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --source commoncrawl:limit=1
+	spark-submit jobs/spark/index.py --source commoncrawl:limit=1 --profile
 
 # Reindex 10 WARC files from Common Crawl
 reindex10:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --source commoncrawl:limit=10
+	spark-submit jobs/spark/index.py --source commoncrawl:limit=10 --profile
+
+# Do a standard reindex
+reindex_standard:
+	./scripts/elasticsearch_reset.py --delete
+	spark-submit jobs/spark/index.py --profile --source commoncrawl:limit=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomain:dir=/tmp/linkgraph_domain/,coalesce=1
+
 
 # Run the explainer web service inside Docker
 docker_explainer:

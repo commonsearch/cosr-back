@@ -11,8 +11,10 @@ from cosrlib.config import config
 from .webarchive import WebarchiveSource
 
 
-def list_commoncrawl_warc_filenames(limit=None, skip=0, version="latest"):
+def list_commoncrawl_warc_filenames(limit=None, skip=0, version=None):
     """ List Common Crawl filenames """
+
+    version = version or "latest"
 
     # Version that was previously imported with ./scripts/import_commoncrawl.sh
     if version == "local":
@@ -24,7 +26,7 @@ def list_commoncrawl_warc_filenames(limit=None, skip=0, version="latest"):
 
         if version == "latest":
             # TODO: how to get the latest version automatically?
-            version = "CC-MAIN-2016-22"
+            version = "CC-MAIN-2016-26"
 
         r = requests.get("https://commoncrawl.s3.amazonaws.com/crawl-data/%s/warc.paths.gz" % version)
         data = gzip.GzipFile(fileobj=StringIO.StringIO(r.content), mode="rb").read()

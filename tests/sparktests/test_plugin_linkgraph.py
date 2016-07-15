@@ -8,7 +8,7 @@ import ujson as json
 
 
 @pytest.mark.elasticsearch
-def test_spark_link_graph(searcher, indexer):
+def test_spark_link_graph(indexer):
 
     linkgraph_dir = tempfile.mkdtemp()
 

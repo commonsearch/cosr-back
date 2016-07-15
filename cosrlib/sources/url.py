@@ -11,4 +11,4 @@ class UrlSource(Source):
             fetched = requests.get(url, headers={'user-agent': 'CommonSearch/dev'})
 
             if fetched.status_code == 200:
-                yield url, fetched.headers, "html", fetched.content
+                yield url, fetched.headers, "html", 2, fetched.content

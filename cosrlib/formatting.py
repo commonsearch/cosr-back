@@ -58,7 +58,7 @@ def format_title(document, url_metadata):  # pylint: disable=unused-argument
 
     # Try the Open Graph Protocol title http://ogp.me/
     if _is_invalid_title(title):
-        title = document.head_metas.get("og:title")
+        title = document.analysis.get("head_metas", {}).get("og:title")
 
     # TODO: Look in DMOZ with url_metadata
 
@@ -102,11 +102,11 @@ def _is_invalid_summary(summary):
 def format_summary(document, url_metadata):  # pylint: disable=unused-argument
     """ Returns a document summary properly formatted for SERP display """
 
-    summary = document.head_metas.get("description")
+    summary = document.analysis.get("head_metas", {}).get("description")
 
     # Try the Open Graph Protocol description http://ogp.me/
     if _is_invalid_summary(summary):
-        summary = document.head_metas.get("og:description")
+        summary = document.analysis.get("head_metas", {}).get("og:description")
 
     # TODO: Look in DMOZ with url_metadata
 

@@ -48,7 +48,7 @@ We also add a [needs discussion](https://github.com/commonsearch/cosr-back/issue
 
 ## Local install
 
-You should look at our [README.md](README.md) to learn how to setup this repository on you local machine. Spoiler: it's easy!
+You should look at our [INSTALL.md](INSTALL.md) to learn how to setup this repository on you local machine. Spoiler: it's easy!
 
 
 ## Pull Requests

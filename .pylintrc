@@ -8,7 +8,7 @@ extension-pkg-whitelist=gumbocy,rocksdb,mmh3
 output-format=colorized
 
 [MESSAGES CONTROL]
-disable=missing-docstring,invalid-name,fixme,locally-disabled,too-few-public-methods,no-self-use,unused-argument,wrong-import-position
+disable=missing-docstring,invalid-name,fixme,locally-disabled,too-few-public-methods,no-self-use,unused-argument,wrong-import-position,superfluous-parens
 
 [DESIGN]
 max-locals=40

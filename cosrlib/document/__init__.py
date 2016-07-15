@@ -21,9 +21,10 @@ def load_document_type(doctype, *args, **kwargs):
 class Document(object):
     """ An indexable document. Base class for all document types (HTML, PDF, ...) """
 
-    def __init__(self, source_data, url=None, headers=None):
+    def __init__(self, source_data, url=None, headers=None, index_level=2):
         self.source_data = source_data
         self.source_headers = headers or {}
+        self.index_level = index_level
 
         if not url:
             self.source_url = URL("")

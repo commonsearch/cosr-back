@@ -4,7 +4,8 @@ import webencodings
 import cchardet
 
 from cosrlib import re
-from . import defs
+from .parsers import GUMBOCY_PARSER_HEAD
+
 
 _RE_XML_ENCODING = re.compile(r'^\s*\<\?xml\s+version\="1\.0"\s+encoding\="([^"]+)"\?\>')
 
@@ -40,11 +41,6 @@ class HTMLEncoding(object):
             self.doc.source_data, "ignore"
         )[0].encode("utf-8", "ignore")
 
-        # We must also delete the temporary parser if we needed one in autodetection
-        # because source_data changed.
-        if self.doc.parser is not None:
-            self.doc.parser = None
-
     def detect(self):
         """ Returns the python-compatible encoding of the doc as a codecs.CodecInfo object
 
@@ -69,7 +65,7 @@ class HTMLEncoding(object):
                 return header_encoding
 
         # Create a temporary parser to look in meta tags
-        self.doc.create_parser()
+        GUMBOCY_PARSER_HEAD.parse(self.doc.source_data)
 
         meta_encoding = self.detect_meta_charset()
         if meta_encoding:
@@ -96,7 +92,7 @@ class HTMLEncoding(object):
     def detect_meta_charset(self):
         """ Returns the encoding found in meta tags in the doc """
 
-        for node in self.doc.parser.listnodes(defs.GUMBOCY_OPTIONS_HEAD):
+        for node in GUMBOCY_PARSER_HEAD.listnodes():
             if node[1] == "meta" and len(node) > 2:
                 if node[2].get("charset"):
                     detected = webencodings.lookup(node[2]["charset"])
