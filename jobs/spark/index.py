@@ -46,6 +46,32 @@ if not args.source:
     raise Exception("You didn't specify any Document Sources with --source ! Nothing to index.")
 
 
+def _setup_worker(*a, **kw):
+    """ Function used to execute some code only once on each worker. Is there a better way to do that? """
+
+    if not hasattr(__builtins__, "_cosr_pyspark_setup_done"):
+
+        indexer.connect()
+
+        if os.getenv("COV_CORE_SOURCE"):
+            from pytest_cov.embed import init
+            cov = init()
+            setattr(__builtins__, "_cosr_pyspark_coverage", cov)
+            print "Coverage started for PID", os.getpid()
+
+        setattr(__builtins__, "_cosr_pyspark_setup_done", True)
+
+
+def _teardown_worker(*a, **kw):
+    """ Used in tests, runs in each worker when the task is finished """
+    if hasattr(__builtins__, "_cosr_pyspark_coverage"):
+        print "Coverage stop for PID", os.getpid()
+        cov = getattr(__builtins__, "_cosr_pyspark_coverage")
+        cov.stop()
+        cov.save()
+        delattr(__builtins__, "_cosr_pyspark_coverage")
+
+
 def index_from_source(source, _indexer, **kwargs):
     """ Indexes all documents from a source """
 
@@ -70,9 +96,7 @@ def index_from_source(source, _indexer, **kwargs):
 def index_documents(documentsource):
     """ Indexes documents from a source """
 
-    # Must do that because we may be in a different process!
-    # TODO: there might be a bug between spark and mprpc's Cython, this shouldn't be necessary.
-    indexer.connect()
+    _setup_worker()
 
     print "Now working on %s" % documentsource
 
@@ -195,17 +219,25 @@ def spark_main():
     ))
 
     # TODO could this be set somewhere in cosr-ops instead?
-    executor_environment = {}
+    executor_environment = {
+        "_SPARK_IS_WORKER": "1"
+    }
     if config["ENV"] == "prod":
-        executor_environment = {
+        executor_environment.update({
             "PYTHONPATH": "/cosr/back",
             "PYSPARK_PYTHON": "/cosr/back/venv/bin/python",
             "LD_LIBRARY_PATH": "/usr/local/lib"
-        }
+        })
 
     sc = SparkContext(appName="Common Search Indexing", conf=conf, environment=executor_environment)
 
+    if config["ENV"] != "prod":
+        sc.parallelize(range(4), 4).foreach(_setup_worker)
+
     spark_execute(sc)
+
+    if config["ENV"] != "prod":
+        sc.parallelize(range(4), 4).foreach(_teardown_worker)
 
     if args.profile:
         sc.show_profiles()
