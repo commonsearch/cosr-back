@@ -22,6 +22,8 @@ before_install:
   - docker pull commonsearch/local-elasticsearch
   - docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
   - docker pull commonsearch/local-back
+  - docker inspect commonsearch/local-back
+  - docker inspect debian:jessie
   - docker build -t commonsearch/local-back .
   - ps -ef
   - netstat -lpn
