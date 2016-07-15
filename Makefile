@@ -88,7 +88,7 @@ devindex: restart_services
 
 # Logins into the container
 docker_shell:
-	docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
+	docker run -v "$(PWD):/cosr/back:rw" -v "$(PWD)/../gumbocy:/cosr/gumbocy:rw" -w /cosr/back -i -t commonsearch/local-back bash
 
 # Stops all docker containers on this machine
 docker_stop_all:
@@ -99,13 +99,16 @@ docker_clean:
 	docker rm -v $$(docker ps -a -q -f status=exited) || true
 	docker rmi $$(docker images -aq) || true
 
+start_local_elasticsearch:
+	# sudo ifconfig lo0 alias 10.0.2.2
+	elasticsearch -Dhttp.port=39200 -Dcluster.routing.allocation.disk.threshold_enabled=false -Dnetwork.host=0.0.0.0 -Dnode.local=true -Ddiscovery.zen.ping.multicast.enabled=false -Dnetwork.publish_host=10.0.2.2
 
 # Starts local services
 start_services:
 	mkdir -p local-data/elasticsearch
 
 	# ElasticSearch
-	docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
+	docker run --privileged --memory-swap=1024m --memory=1024m -e ES_HEAP_SIZE=512m -e MAX_LOCKED_MEMORY=unlimited -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
 
 	# URLServer
 	docker run -d -v "$(PWD):/cosr/back:rw" -w /cosr/back -p 9702:9702 commonsearch/local-back python urlserver/server.py
@@ -120,12 +123,18 @@ restart_services: stop_services start_services
 # Reindex 1 WARC file from Common Crawl
 reindex1:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --source commoncrawl:limit=1
+	spark-submit jobs/spark/index.py --source commoncrawl:limit=1 --profile
 
 # Reindex 10 WARC files from Common Crawl
 reindex10:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --source commoncrawl:limit=10
+	spark-submit jobs/spark/index.py --source commoncrawl:limit=10 --profile
+
+# Do a standard reindex
+reindex_standard:
+	./scripts/elasticsearch_reset.py --delete
+	spark-submit jobs/spark/index.py --profile --source commoncrawl:limit=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomain:dir=/tmp/linkgraph_domain/,coalesce=1
+
 
 # Run the explainer web service inside Docker
 docker_explainer:

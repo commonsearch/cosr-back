@@ -30,7 +30,7 @@ class ElasticsearchBulkIndexer(object):
         if self.connected:
             return
         self.connected = True
-        self.client = Elasticsearch(self.servers[self.index_name])
+        self.client = Elasticsearch(self.servers[self.index_name], timeout=60)
 
     def index(self, _id, hit):
         """ Queue one document for indexing. """

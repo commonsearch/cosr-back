@@ -1,6 +1,7 @@
 import importlib
 import os
 import json
+from collections import defaultdict
 from cosrlib import re
 
 
@@ -16,15 +17,23 @@ def load_plugin(path, *args, **kwargs):
 
 
 def load_plugins(specs):
-    """ Loads and instanciates a list of Plugins from their specs """
-    return [load_plugin(*parse_plugin_cli_args(spec)) for spec in (specs or []) if spec]
+    """ Loads and instanciates a list of Plugins from their specs, and returns them indexed by hook """
+
+    hooks = defaultdict(list)
+
+    for spec in (specs or []):
+        if spec:
+            plugin = load_plugin(*parse_plugin_cli_args(spec))
+            for hook in plugin.hooks:
+                hooks[hook].append(getattr(plugin, hook))
+
+    return hooks
 
 
 def exec_hook(plugins, hook, *args, **kwargs):
     """ Executes one hook on a list of plugins """
-    for plugin in plugins:
-        if hook in plugin.hooks:
-            getattr(plugin, hook)(*args, **kwargs)
+    for plugin_hook in plugins[hook]:
+        plugin_hook(*args, **kwargs)
 
 
 def parse_plugin_cli_args(plugin_spec):

@@ -9,7 +9,7 @@ class DomainToDomain(Plugin):
     def document_post_index(self, document, spark_response):
         """ Filters a document post-indexing """
 
-        spark_response["links"] = document.get_hyperlinks()
+        spark_response["external_links"] = document.get_external_hyperlinks()
 
     def spark_pipeline_collect(self, sc, rdd, indexer):
 
@@ -18,7 +18,7 @@ class DomainToDomain(Plugin):
             """ Returns all the parsed links in this record as (from_domain, to_domain) tuples  """
 
             record_domain = indexer.urlclient.get_domain_ids([record["url"]])[0]
-            domains = list(set([link["href"].homepage for link in record["links"]]))
+            domains = list(set([link["href"].homepage for link in record["external_links"]]))
             link_ids = set(indexer.urlclient.get_domain_ids(domains))
             link_ids.discard(record_domain)
 

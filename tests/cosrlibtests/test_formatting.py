@@ -80,6 +80,7 @@ def test_format_summary():
     page = HTMLDocument(html).parse()
     assert format_summary(page, {}) == "But there is a more informative title! Use it"
 
+
 def test_infer_spaces():
 
     assert infer_subwords(["lemonde", "fr"], ["Le Monde: French Newspaper"]) == ["le", "monde", "fr"]

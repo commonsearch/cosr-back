@@ -32,15 +32,6 @@ def get_args():
     parser.add_argument("--plugin", type=str, action="append",
                         help="Plugin to execute in the pipeline. May be specified multiple times.")
 
-    parser.add_argument("--only_homepages", action='store_true',
-                        help="Only index homepages")
-
-    parser.add_argument("--domain_whitelist", default=None, type=str,
-                        help="Comma-separated list of domains to fully index")
-
-    parser.add_argument("--domain_blacklist", default=None, type=str,
-                        help="Comma-separated list of domains not to index")
-
     parser.add_argument("--profile", action='store_true',
                         help="Profile Python usage")
 
@@ -103,12 +94,7 @@ def spark_execute(sc):
     """ Execute our indexing pipeline with a Spark Context """
 
     plugins = load_plugins(args.plugin)
-
-    filters = {
-        "domain_whitelist": args.domain_whitelist,
-        "domain_blacklist": args.domain_blacklist,
-        "only_homepages": args.only_homepages
-    }
+    maxdocs = {}
 
     # Spark RDD containing everything we indexed
     all_indexed_documents = sc.emptyRDD()
@@ -116,15 +102,21 @@ def spark_execute(sc):
     for source_spec in args.source:
 
         source_name, source_args = parse_plugin_cli_args(source_spec)
+        maxdocs[source_spec] = source_args.get("maxdocs")
 
         if source_name == "commoncrawl":
             partitions = list_commoncrawl_warc_filenames(
                 limit=source_args.get("limit"),
-                skip=source_args.get("skip")
+                skip=source_args.get("skip"),
+                version=source_args.get("version")
             )
 
             def index_partition(filename):
-                ds = load_source("commoncrawl", {"file": filename, "filters": filters})
+                ds = load_source("commoncrawl", {
+                    "file": filename,
+                    "plugins": plugins,
+                    "maxdocs": maxdocs[source_spec]  # pylint: disable=cell-var-from-loop
+                })
                 return index_documents(ds)
 
         elif source_name == "warc":
@@ -139,7 +131,11 @@ def spark_execute(sc):
                 partitions = [source_args["file"]]
 
             def index_partition(filename):
-                ds = load_source("webarchive", {"file": filename, "filters": filters})
+                ds = load_source("webarchive", {
+                    "file": filename,
+                    "plugins": plugins,
+                    "maxdocs": maxdocs[source_spec]  # pylint: disable=cell-var-from-loop
+                })
                 return index_documents(ds)
 
         elif source_name == "wikidata":
@@ -147,7 +143,10 @@ def spark_execute(sc):
             partitions = ["__wikidata_single_dump__"]
 
             def index_partition(_):
-                ds = load_source("wikidata", {})
+                ds = load_source("wikidata", {
+                    "maxdocs": maxdocs[source_spec],  # pylint: disable=cell-var-from-loop
+                    "plugins": plugins
+                })
                 return index_documents(ds)
 
         elif source_name == "corpus":
@@ -155,7 +154,11 @@ def spark_execute(sc):
             partitions = source_args["docs"]
 
             def index_partition(doc):
-                ds = load_source("corpus", {"docs": [doc]})
+                ds = load_source("corpus", {
+                    "maxdocs": maxdocs[source_spec],  # pylint: disable=cell-var-from-loop
+                    "docs": [doc],
+                    "plugins": plugins
+                })
                 return index_documents(ds)
 
         elif source_name == "url":
@@ -163,7 +166,10 @@ def spark_execute(sc):
             partitions = source_args.get("urls") or [source_args["url"]]
 
             def index_partition(url):
-                ds = load_source("url", {"urls": [url]})
+                ds = load_source("url", {
+                    "urls": [url],
+                    "plugins": plugins
+                })
                 return index_documents(ds)
 
         # Split indexing of each partition in Spark workers

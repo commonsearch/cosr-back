@@ -44,7 +44,9 @@ class WebarchiveSource(Source):
 
             url = URL(record.url, check_encoding=True)
 
-            if not self.filter_url(url):
+            do_parse, index_level = self.filter_url(url)
+
+            if not do_parse:
                 continue
 
             payload = record.payload.read()
@@ -57,7 +59,7 @@ class WebarchiveSource(Source):
                 # print "Not HTML?", record.url, headers
                 continue
 
-            yield url, headers, "html", parser.recv_body()
+            yield url, headers, "html", index_level, parser.recv_body()
 
 
 def create_warc_from_corpus(documents, filename=None):

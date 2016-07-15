@@ -18,7 +18,7 @@ ATTRIBUTES_WHITELIST = frozenset([
 ])
 
 # The meta names or properties we parse in the <head>
-META_WHITELIST = frozenset([
+METAS_WHITELIST = frozenset([
     "description",
     "og:description",
     "og:title"
@@ -71,12 +71,18 @@ IDS_BOILERPLATE = frozenset([
     "navigation",
     "nav",
     "footer",
-    "header"
+    "header",
+    "expanded-nav",
+    "mobile-nav",
+    "sign_in",
+    "user-bar"
 ])
 
 # HTML Element classes that suggest boilerplate elements
 CLASSES_BOILERPLATE = frozenset([
-    "twitter-follow-button"
+    "twitter-follow-button",
+    "sharetools",
+    "login"
 ])
 
 # Values for the "role" attribute that suggest boilerplate elements
@@ -137,7 +143,16 @@ GUMBOCY_OPTIONS = {
     "tags_ignore": TAGS_NOINDEX,
     "classes_ignore": CLASSES_NOINDEX,
     "ids_ignore": IDS_NOINDEX,
+    "classes_hidden": CLASSES_HIDDEN,
+    "ids_hidden": IDS_HIDDEN,
     "attributes_whitelist": ATTRIBUTES_WHITELIST,
+    "ids_boilerplate": IDS_BOILERPLATE,
+    "tags_boilerplate": TAGS_BOILERPLATE,
+    "tags_boilerplate_bypass": TAGS_BOILERPLATE_BYPASS,
+    "classes_boilerplate": CLASSES_BOILERPLATE,
+    "roles_boilerplate": ROLES_BOILERPLATE,
+    "tags_separators": TAGS_SEPARATORS,
+    "metas_whitelist": METAS_WHITELIST,
     "nesting_limit": 300
 }
 

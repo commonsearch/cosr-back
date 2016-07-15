@@ -149,7 +149,9 @@ class Indexer(object):
             "title": parsed["title_formatted"],
             "summary": parsed["summary_formatted"]
         }
-        self.es_docs.index(docid, es_doc)
+
+        if doc.index_level > 0:
+            self.es_docs.index(docid, es_doc)
 
         # Insert in text index
         es_text = {
@@ -178,12 +180,15 @@ class Indexer(object):
 
         # print es_text
 
-        # Assemble the extracted word groups
-        # TODO weights! https://github.com/commonsearch/cosr-back/issues/5
-        word_groups = doc.get_word_groups()
-        es_text["body"] = u" ".join([wg["words"].decode("utf-8", "ignore") for wg in word_groups])
+        if doc.index_level > 0:
 
-        self.es_text.index(docid, es_text)
+            # Assemble the extracted word groups
+            # TODO weights! https://github.com/commonsearch/cosr-back/issues/5
+            if doc.index_level > 1:
+                word_groups = doc.get_word_groups()
+                es_text["body"] = u" ".join([wg["words"].decode("utf-8", "ignore") for wg in word_groups])
+
+            self.es_text.index(docid, es_text)
 
         # Return structured data for Spark operations that may happen after this
         ret = {
