@@ -88,7 +88,8 @@ devindex: restart_services
 
 # Logins into the container
 docker_shell:
-	docker run -v "$(PWD):/cosr/back:rw" -v "$(PWD)/../gumbocy:/cosr/gumbocy:rw" -w /cosr/back -i -t commonsearch/local-back bash
+	# -v "$(PWD)/../gumbocy:/cosr/gumbocy:rw"
+	docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
 
 # Stops all docker containers on this machine
 docker_stop_all:
@@ -108,7 +109,7 @@ start_services:
 	mkdir -p local-data/elasticsearch
 
 	# ElasticSearch
-	docker run --privileged --memory-swap=1024m --memory=1024m -e ES_HEAP_SIZE=512m -e MAX_LOCKED_MEMORY=unlimited -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
+	docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
 
 	# URLServer
 	docker run -d -v "$(PWD):/cosr/back:rw" -w /cosr/back -p 9702:9702 commonsearch/local-back python urlserver/server.py
