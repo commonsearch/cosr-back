@@ -40,7 +40,10 @@ class ElasticsearchBulkIndexer(object):
             self.connect()
 
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
-        self.buffer.append('{"index":{"_id":"%s"}}\n%s\n' % (_id, json.dumps(hit)))
+        self.buffer.append('{"index":{"_id":"%s"}}\n%s\n' % (
+            _id,
+            json.dumps(hit)  # pylint: disable=no-member
+        ))
 
         if len(self.buffer) >= self.batch_size:
             self.flush()
@@ -98,7 +101,8 @@ class ElasticsearchBulkIndexer(object):
         body = "".join(self.buffer)
 
         # TODO retries
-        status, headers, data = connection.perform_request("POST", bulk_url, body=body)
+        # status, headers, data
+        status, _, _ = connection.perform_request("POST", bulk_url, body=body)
 
         if status != 200:
             raise Exception("Elasticsearch returned status=%s" % status)

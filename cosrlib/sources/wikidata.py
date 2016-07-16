@@ -10,6 +10,9 @@ class WikidataSource(Source):
 
         datasource = load_datasource("wikidata")
 
+        i = 0
+        maxdocs = int(self.args.get("maxdocs") or 9999999999)
+
         for key, _ in datasource.iter_rows():
 
             doc = Document(None, url="http://%s" % key)  # TODO get the original URL instead?
@@ -18,3 +21,7 @@ class WikidataSource(Source):
             # doc._title = values["wikidata_title"]
 
             yield doc
+
+            i += 1
+            if i > maxdocs:
+                return

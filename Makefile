@@ -29,7 +29,7 @@ import_local_data:
 	rm -rf /tmp/cosrlocaldata
 	mkdir -p /tmp/cosrlocaldata
 	mkdir -p local-data
-	COSR_PATH_LOCALDATA=/tmp/cosrlocaldata python urlserver/import.py
+	COSR_PATH_LOCALDATA=/tmp/cosrlocaldata python urlserver/import.py  # -m cProfile -s cumtime
 	mv /tmp/cosrlocaldata/urlserver-rocksdb local-data/urlserver-rocksdb
 	rm -rf /tmp/cosrlocaldata
 
@@ -133,8 +133,9 @@ reindex10:
 
 # Do a standard reindex
 reindex_standard:
+	rm -rf /tmp/linkgraph_domain
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --profile --source commoncrawl:limit=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomain:dir=/tmp/linkgraph_domain/,coalesce=1
+	spark-submit jobs/spark/index.py --profile --source wikidata:maxdocs=100000 --source commoncrawl:limit=4 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomain:dir=/tmp/linkgraph_domain/,coalesce=1
 
 
 # Run the explainer web service inside Docker

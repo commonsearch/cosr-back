@@ -10,6 +10,7 @@ class DataSource(BaseDataSource):
     dump_compression = "gz"
     dump_format = "tsv"
     dump_batch_size = 1000000
+    dump_count_estimate = 101717775
 
     def import_row(self, i, row):
         """ Maps a raw data row into a list of (key, values) pairs """

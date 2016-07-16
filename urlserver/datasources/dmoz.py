@@ -11,6 +11,7 @@ class DataSource(BaseDataSource):
     dump_compression = "gz"
     dump_format = "xml"
     dump_batch_size = 100000
+    dump_count_estimate = 3000000
 
     def import_row(self, i, row):
         """ Returns a (key, value) pair for this row from the dump file """
@@ -21,7 +22,7 @@ class DataSource(BaseDataSource):
             return
 
         if elem.tag == "{http://dmoz.org/rdf/}ExternalPage":
-            url = URL(elem.attrib.get("about")).normalized
+            url = URL(elem.attrib["about"].encode("utf-8")).normalized
             title = elem.find("{http://purl.org/dc/elements/1.0/}Title")
             description = elem.find("{http://purl.org/dc/elements/1.0/}Description")
 

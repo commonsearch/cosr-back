@@ -11,6 +11,7 @@ class DataSource(BaseDataSource):
     dump_compression = "gz"
     dump_format = "json-lines"
     dump_batch_size = 10000
+    dump_count_estimate = 1000000
 
     def import_row(self, i, row):
         """ Maps a raw data row into a list of (key, values) pairs """

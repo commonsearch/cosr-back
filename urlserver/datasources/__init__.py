@@ -44,6 +44,7 @@ class BaseDataSource(object):
     dump_compression_params = None
     dump_format = None
     dump_batch_size = None
+    dump_count_estimate = None
 
     def __init__(self, name):
         self.name = name
@@ -63,9 +64,7 @@ class BaseDataSource(object):
 
         done = 0
 
-        for key, values in self.iter_rows():
-
-            url = key.encode("utf-8")
+        for url, values in self.iter_rows():
 
             # TODO: RocksDB merge operator?
             existing_value = db.get(url)
@@ -90,7 +89,21 @@ class BaseDataSource(object):
             done += 1
 
             if self.dump_batch_size and (done % self.dump_batch_size) == 0:
-                print "Done %s (%s/s)" % (done, int(done / (time.time() - batch_time)))
+
+                eta = 0
+                if self.dump_count_estimate:
+                    eta = float(
+                        self.dump_count_estimate - done
+                    ) / (
+                        3600.0 * done / (time.time() - batch_time)
+                    )
+
+                print "Done %s (%s/s, ~%0.2f%%, ETA %0.2fh)" % (
+                    done,
+                    int(done / (time.time() - batch_time)),
+                    (float(done * 100) / self.dump_count_estimate) if self.dump_count_estimate else 0,
+                    eta
+                )
                 write_batch = db.write_batch(write_batch)
                 batch_time = time.time()
 

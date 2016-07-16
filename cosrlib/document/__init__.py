@@ -33,8 +33,6 @@ class Document(object):
         else:
             self.source_url = url
 
-        self._title = None
-        self._hyperlinks = []
         self._word_groups = []
 
     def parse(self):
@@ -52,7 +50,7 @@ class Document(object):
 
     def get_title(self):
         """ Returns document title, without any cleaning """
-        return self._title
+        return None
 
     def get_all_words(self):
         """ Returns a set with all the words in the document. Mostly used for simple tests """
@@ -114,7 +112,11 @@ class Document(object):
 
     def get_hyperlinks(self):
         """ Returns a list of followable URLs found in the document """
-        return self._hyperlinks
+        return []
+
+    def get_external_hyperlinks(self):
+        """ Returns a list of followable URLs found in the document """
+        return []
 
     def get_head_metas(self):
         """ Returns metadata from the document header """
