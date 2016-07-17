@@ -42,6 +42,12 @@ def test_urlclient_getids(urlclient):
     ]))
     assert res == [wp_homepage, wp_new_page]
 
+    assert wp_homepage == client.get_domain_id("http://www.wordpress.org")
+    assert wp_homepage == client.get_domain_id("http://wordpress.org")
+    assert wp_homepage == client.get_domain_id("https://wordpress.org/?")
+    assert wp_homepage == client.get_domain_id("https://wordpress.org/page")
+    assert wp_homepage != client.get_domain_id("https://en.wordpress.org/page")
+
 
 def test_urlclient_getmetadata(urlclient):
 

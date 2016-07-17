@@ -111,10 +111,17 @@ class URL(object):
                 value = value[:-4]
 
         elif attr == "normalized_subdomain":
-            if self.subdomain.startswith("www."):
+            if self.subdomain == "www":
+                value = ""
+            elif self.subdomain.startswith("www."):
                 value = self.subdomain[4:]
             else:
                 value = self.subdomain
+
+        elif attr == "normalized_path":
+            if self.parsed.path == "/":
+                return ""
+            return self.parsed.path
 
         # https://en.wikipedia.org/wiki/Public_Suffix_List
         # Returns the domain name suffix ("co.uk" for "bbc.co.uk")
