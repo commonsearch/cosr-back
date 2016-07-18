@@ -141,7 +141,7 @@ RUN curl -sL --retry 3 \
 ENV HADOOP_VERSION 2.6.4
 ENV HADOOP_HOME /usr/hadoop
 ENV PATH $PATH:$HADOOP_HOME/bin
-RUN curl -s http://www.eu.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz | tar -xz -C /usr/
+RUN curl -sL http://www.eu.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz | tar -xz -C /usr/
 RUN cd /usr/ && ln -s ./hadoop-$HADOOP_VERSION hadoop
 
 
@@ -157,7 +157,7 @@ RUN wget 'https://repo1.maven.org/maven2/org/apache/parquet/parquet-tools/1.8.1/
 # Install PyPy for performance testing
 #
 
-RUN curl -L 'https://bitbucket.org/squeaky/portable-pypy/downloads/pypy-5.3.1-linux_x86_64-portable.tar.bz2' -o /pypy.tar.bz2 && \
+RUN curl -sL 'https://bitbucket.org/squeaky/portable-pypy/downloads/pypy-5.3.1-linux_x86_64-portable.tar.bz2' -o /pypy.tar.bz2 && \
   mkdir -p /opt/pypy/ && tar jxvf /pypy.tar.bz2 -C /opt/pypy/  --strip-components=1 && \
   rm /pypy.tar.bz2
 
