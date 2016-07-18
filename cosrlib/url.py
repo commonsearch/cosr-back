@@ -11,7 +11,11 @@ class URL(object):
     """ Base class for manipulating an URL without context """
 
     def __init__(self, url, check_encoding=False):
-        self.url = url
+
+        if isinstance(url, unicode):
+            self.url = url.encode("utf-8")
+        else:
+            self.url = url
 
         if check_encoding:
             try:

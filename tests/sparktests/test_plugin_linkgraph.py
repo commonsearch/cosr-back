@@ -15,7 +15,7 @@ def test_spark_link_graph_txt(indexer, sparksubmit):
 
     try:
 
-        sparksubmit("spark/jobs/index.py --source corpus:%s  --plugin plugins.linkgraph.DomainToDomain:coalesce=1,dir=%s/out/" % (
+        sparksubmit("spark/jobs/index.py  --source wikidata --source corpus:%s  --plugin plugins.linkgraph.DomainToDomain:coalesce=1,dir=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             linkgraph_dir
         ))
@@ -56,7 +56,7 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
 
         # Then read the generated Parquet files with another library to ensure compatibility
         # TODO: replace this with a JSON dump from a Python binding when available
-        out = subprocess.check_output("hadoop jar /usr/spark/packages/parquet-tools-1.8.1.jar cat --json %s/out/edges/ 2>/dev/null" % linkgraph_dir, shell=True)
+        out = subprocess.check_output("hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json %s/out/edges/ 2>/dev/null" % linkgraph_dir, shell=True)
 
         print repr(out)
 
@@ -71,7 +71,7 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
 
         assert len(lines) == 3
 
-        out = subprocess.check_output("hadoop jar /usr/spark/packages/parquet-tools-1.8.1.jar cat --json %s/out/vertices/ 2>/dev/null" % linkgraph_dir, shell=True)
+        out = subprocess.check_output("hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json %s/out/vertices/ 2>/dev/null" % linkgraph_dir, shell=True)
 
         print repr(out)
 
@@ -84,6 +84,23 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
 
         assert len(lines) == 4
 
+        # Now compute page rank on the domain graph!
+        sparksubmit("spark/jobs/pagerank.py --edges %s/out/edges/ --vertices %s/out/vertices/ --maxiter 10 --dump %s/out/pagerank/" % (
+            linkgraph_dir,
+            linkgraph_dir,
+            linkgraph_dir
+        ), packages=["graphframes"])
+
+        # We collect(1) so there should be only one partition
+        pr_file = linkgraph_dir + "/out/pagerank/part-00000"
+        assert os.path.isfile(pr_file)
+
+        with open(pr_file, "r") as f:
+            pr = [x.split(" ") for x in f.read().strip().split("\n")]
+
+        assert len(pr) == 4
+        assert pr[0][0] == "example-b.com"
+        assert pr[0][1] > 1
+
     finally:
         shutil.rmtree(linkgraph_dir)
-

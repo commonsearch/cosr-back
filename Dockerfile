@@ -149,9 +149,9 @@ RUN cd /usr/ && ln -s ./hadoop-$HADOOP_VERSION hadoop
 # Spark packages
 #
 
-RUN mkdir -p /usr/spark/packages/
-RUN wget 'http://dl.bintray.com/spark-packages/maven/graphframes/graphframes/0.1.0-spark1.6/graphframes-0.1.0-spark1.6.jar' -P /usr/spark/packages/
-RUN wget 'https://repo1.maven.org/maven2/org/apache/parquet/parquet-tools/1.8.1/parquet-tools-1.8.1.jar' -P /usr/spark/packages/
+RUN mkdir -p /usr/spark/packages/jars
+RUN wget 'http://dl.bintray.com/spark-packages/maven/graphframes/graphframes/0.1.0-spark1.6/graphframes-0.1.0-spark1.6.jar' -P /usr/spark/packages/jars
+RUN wget 'https://repo1.maven.org/maven2/org/apache/parquet/parquet-tools/1.8.1/parquet-tools-1.8.1.jar' -P /usr/spark/packages/jars
 
 #
 # Install PyPy for performance testing

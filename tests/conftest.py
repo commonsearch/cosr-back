@@ -111,7 +111,15 @@ def searcher(request):
 
 @pytest.fixture(scope="function")
 def sparksubmit(request):
-    def _sparksubmit(cmd):
-        os.system("SPARK_CONF_DIR=%s/spark/conf COSR_ENV=ci COSR_TESTDATA=1 spark-submit --jars /usr/spark/packages/graphframes-0.1.0-spark1.6.jar %s" % (os.getcwd(), cmd, ))
+    def _sparksubmit(cmd, packages=None):
+
+        package_dir = {
+            "graphframes": "graphframes:graphframes:0.1.0-spark1.6"
+        }
+        cmd_packages = ""
+        for p in (packages or []):
+            cmd_packages += "--packages %s" % package_dir[p]
+
+        os.system("SPARK_CONF_DIR=%s/spark/conf COSR_ENV=ci COSR_TESTDATA=1 spark-submit %s %s" % (os.getcwd(), cmd_packages, cmd, ))
 
     return _sparksubmit

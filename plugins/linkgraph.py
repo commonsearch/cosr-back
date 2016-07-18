@@ -30,9 +30,9 @@ class DomainToDomain(Plugin):
         def iter_links_domain(record):
             """ Returns all the parsed links in this record as (from_domain, to_domain) tuples  """
 
-            record_domain = URL(str(record["url"])).normalized_domain
+            record_domain = URL(record["url"]).normalized_domain
             domains = list(set([
-                URL(str(link["href"])).normalized_domain
+                URL(link["href"]).normalized_domain
                 for link in record["external_links"]
             ]))
 
@@ -66,7 +66,7 @@ class DomainToDomainParquet(DomainToDomain):
             """ Returns all the parsed links in this record as (from_domain, to_domain) tuples  """
 
             record_domain = indexer.urlclient.get_domain_id(record["url"])
-            domains = list(set([URL(str(link["href"])).homepage for link in record["external_links"]]))
+            domains = list(set([URL(link["href"]).homepage for link in record["external_links"]]))
             link_ids = set(indexer.urlclient.get_domain_ids(domains))
             link_ids.discard(record_domain)
 
@@ -86,8 +86,8 @@ class DomainToDomainParquet(DomainToDomain):
         def iter_domain(record):
             """ Returns all the domains found in links """
 
-            domains = set([URL(str(link["href"])).normalized_domain for link in record["external_links"]])
-            domains.add(URL(str(record["url"])).normalized_domain)
+            domains = set([URL(link["href"]).normalized_domain for link in record["external_links"]])
+            domains.add(URL(record["url"]).normalized_domain)
 
             return list(domains)
 
