@@ -34,13 +34,7 @@ class URL(object):
 
     def urljoin(self, href):
         """ Optimized version of urlparse.urljoin() """
-
-        if href.startswith("http://") or href.startswith("https://"):
-            return href
-        elif href.startswith("/") and not href.startswith("//"):
-            return self.homepage + href
-        else:
-            return urlparse.urljoin(self.url, href)
+        return urlparse.urljoin(self.url, href)
 
     # Allow picking/unpickling
     def __getstate__(self):

@@ -71,5 +71,4 @@ Flask==0.11.1
 protobuf==3.0.0b3
 
 # Performance-focused replacement for urlparse
-# -e git+git://github.com/commonsearch/urlparse4.git@99e877ef7385ec2f384e405e3de240e2097ff540#egg=urlparse4
-urlparse4==0.1.3
+-e git+git://github.com/commonsearch/urlparse4.git@fda910309aa189d57473dbb12e2d2acde49c1736#egg=urlparse4

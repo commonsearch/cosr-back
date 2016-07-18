@@ -9,6 +9,7 @@ from .parsers import GUMBOCY_PARSER
 
 
 _RE_STRIP_TAGS = re.compile(r"<.*?>")
+_RE_VALID_NETLOC = re.compile(r"^[a-zA-Z0-9.:-]+$")
 
 
 class HTMLDocument(Document):
@@ -72,12 +73,22 @@ class HTMLDocument(Document):
         else:
             base_url = self.source_url
 
-        return [
-            {
-                "href": URL(base_url.urljoin(href), check_encoding=True),
-                "words": self._split_words(words)
-            } for href, words in links
-        ]
+        hyperlinks = []
+        for href, words in links:
+            url = URL(base_url.urljoin(href), check_encoding=True)
+
+            if (
+                # not url.parsed.username and
+                "@" not in url.parsed.path and
+                not href.startswith("<") and  # if path starts with "<", it's probably an html error
+                _RE_VALID_NETLOC.match(url.parsed.netloc)
+            ):
+                hyperlinks.append({
+                    "href": url,
+                    "words": self._split_words(words)
+                })
+
+        return hyperlinks
 
     def get_title(self):
         return self.analysis.get("title")

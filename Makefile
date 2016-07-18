@@ -135,7 +135,7 @@ reindex10:
 reindex_standard:
 	rm -rf ./out/
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit spark/jobs/index.py --profile --source wikidata:maxdocs=10000 --source commoncrawl:limit=4 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:dir=/cosr/back/out/,coalesce=1
+	spark-submit spark/jobs/index.py --source wikidata:maxdocs=10000 --source commoncrawl:limit=10 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:dir=/cosr/back/out/,coalesce=1
 
 pagerank_standard:
 	SPARK_CONF_DIR=/cosr/back/spark/conf spark-submit --packages graphframes:graphframes:0.1.0-spark1.6 spark/jobs/pagerank.py --edges /cosr/back/out/edges/ --vertices /cosr/back/out/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 10
