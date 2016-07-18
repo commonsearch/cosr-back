@@ -116,7 +116,7 @@ class Searcher(object):
         for hit in es_text_result["hits"]["hits"]:
             row = {
                 "score": hit["_score"],
-                "docid": int(hit["_id"])
+                "id": int(hit["_id"])
             }
             if "rank" in hit.get("fields", {}):
                 row["rank"] = hit["fields"]["rank"][0]

@@ -1,3 +1,4 @@
+# pylint: disable=too-many-branches
 import urllib
 import tldextract as _tldextract
 import urlparse4 as urlparse

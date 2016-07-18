@@ -3,7 +3,6 @@
 /venv-pypy
 .DS_Store
 /prof
-/spark
 /build
 /.cache
 /src

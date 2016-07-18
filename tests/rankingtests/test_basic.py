@@ -330,7 +330,7 @@ def test_ranking_corpuses(corpus_id, corpus_index, indexer, searcher):
     index_res = indexer.client.index_corpus(corpus["docs"], flush=True, refresh=True)
 
     docids_map = {
-        str(r["docid"]): i for i, r in enumerate(index_res)
+        str(r["id"]): i for i, r in enumerate(index_res)
     }
 
     for lang, searches in corpus["searches"].iteritems():
@@ -338,13 +338,13 @@ def test_ranking_corpuses(corpus_id, corpus_index, indexer, searcher):
             search_res = searcher.client.search(search, explain=bool(corpus.get("explain")), lang=lang)
             hits = search_res["hits"]
 
-            hits_indexes = [docids_map[str(hit["docid"])] for hit in hits]
+            hits_indexes = [docids_map[str(hit["id"])] for hit in hits]
 
             print "*" * 50
             print "SEARCH [lang=%s]: %s" % (lang, search)
             print
             for hit in hits:
-                doc_index = docids_map[str(hit["docid"])]
+                doc_index = docids_map[str(hit["id"])]
                 print " Doc #%s (%s)  %s" % (doc_index, corpus["docs"][doc_index]["url"], corpus["docs"][doc_index]["content"][0:50])
                 print "   rank:   %s" % hit["rank"]
 

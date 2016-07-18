@@ -22,7 +22,7 @@ def test_spark_multiple_sources(searcher, indexer, sparksubmit):
 
     # Sources are done in order and overlapping documents are overwritten
     sparksubmit(
-        """jobs/spark/index.py \
+        """spark/jobs/index.py \
          --source wikidata \
          --source corpus:%s """ % (
             pipes.quote(json.dumps(CORPUS)),

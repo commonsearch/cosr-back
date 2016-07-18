@@ -49,7 +49,7 @@ CORPUSES = {
 def test_spark_index(searcher, indexer, sparksubmit):
 
     # TODO: we could make this faster by disabling the web UI and other components?
-    sparksubmit("jobs/spark/index.py --source corpus:%s" % pipes.quote(json.dumps(CORPUSES["simple_docs"])))
+    sparksubmit("spark/jobs/index.py --source corpus:%s" % pipes.quote(json.dumps(CORPUSES["simple_docs"])))
 
     search_res = searcher.client.search("hello", explain=False, lang=None, fetch_docs=True)
     hits = search_res["hits"]

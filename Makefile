@@ -124,18 +124,18 @@ restart_services: stop_services start_services
 # Reindex 1 WARC file from Common Crawl
 reindex1:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --source commoncrawl:limit=1 --profile
+	spark-submit spark/jobs/index.py --source commoncrawl:limit=1 --profile
 
 # Reindex 10 WARC files from Common Crawl
 reindex10:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --source commoncrawl:limit=10 --profile
+	spark-submit spark/jobs/index.py --source commoncrawl:limit=10 --profile
 
 # Do a standard reindex
 reindex_standard:
 	rm -rf /tmp/linkgraph_domain
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit jobs/spark/index.py --profile --source wikidata:maxdocs=100000 --source commoncrawl:limit=4 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomain:dir=/tmp/linkgraph_domain/,coalesce=1
+	spark-submit spark/jobs/index.py --profile --source wikidata:maxdocs=100000 --source commoncrawl:limit=4 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomain:dir=/tmp/linkgraph_domain/,coalesce=1
 
 
 # Run the explainer web service inside Docker
@@ -153,8 +153,8 @@ test: import_local_testdata
 
 # Runs all tests with coverage info
 test_coverage: clean_coverage
-	COV_CORE_CONFIG=$(PWD)/.coveragerc COV_CORE_DATAFILE=$(PWD)/.coverage COV_CORE_SOURCE=$(PWD)/cosrlib:$(PWD)/urlserver:$(PWD)/jobs make import_local_testdata
-	PYTHONDONTWRITEBYTECODE=1 py.test --cov-append --cov=plugins --cov=cosrlib --cov=urlserver --cov=jobs --cov-report html --cov-report xml --cov-report term tests/ -v
+	COV_CORE_CONFIG=$(PWD)/.coveragerc COV_CORE_DATAFILE=$(PWD)/.coverage COV_CORE_SOURCE=$(PWD)/cosrlib:$(PWD)/urlserver:$(PWD)/spark make import_local_testdata
+	PYTHONDONTWRITEBYTECODE=1 py.test --cov-append --cov=plugins --cov=cosrlib --cov=urlserver --cov=spark --cov-report html --cov-report xml --cov-report term tests/ -v
 	mv .coverage.* .coverage
 	coveralls || true
 
@@ -165,10 +165,10 @@ docker_test_coverage:
 	docker run -e TRAVIS -e TRAVIS_BRANCH -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
 
 pylint:
-	PYTHONPATH=. pylint cosrlib urlserver jobs explainer plugins
+	PYTHONPATH=. pylint cosrlib urlserver spark explainer plugins
 
 docker_pylint:
 	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make pylint
 
 todo:
-	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver jobs explainer plugins
+	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver spark explainer plugins

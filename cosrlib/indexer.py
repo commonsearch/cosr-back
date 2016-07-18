@@ -192,8 +192,8 @@ class Indexer(object):
 
         # Return structured data for Spark operations that may happen after this
         ret = {
-            "docid": docid,
-            "url": parsed["url"],
+            "id": docid,
+            "url": parsed["url"].url,
             "rank": rank
         }
 

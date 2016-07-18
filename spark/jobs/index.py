@@ -12,6 +12,9 @@ else:
     sys.path.insert(-1, os.path.normpath(os.path.join(__file__, "../../../")))
 
 from pyspark import SparkContext, SparkConf  # pylint: disable=import-error
+from pyspark.sql import SQLContext  # pylint: disable=import-error
+from pyspark.sql import types as SparkTypes  # pylint: disable=import-error
+from pyspark.storagelevel import StorageLevel  # pylint: disable=import-error
 
 from cosrlib.sources import load_source
 from cosrlib.sources.commoncrawl import list_commoncrawl_warc_filenames
@@ -110,18 +113,30 @@ def index_documents(documentsource):
         indexer.refresh()
 
 
-def print_rows(row):
-    print "Indexed", row["url"].url
+def print_row(row):
+    print repr(row)
+    return row
 
 
-def spark_execute(sc):
+def spark_execute(sc, sqlc):
     """ Execute our indexing pipeline with a Spark Context """
 
     plugins = load_plugins(args.plugin)
     maxdocs = {}
 
-    # Spark RDD containing everything we indexed
-    all_indexed_documents = sc.emptyRDD()
+    # What fields will be send to Spark
+    document_schema_columns = [
+        SparkTypes.StructField("id", SparkTypes.LongType(), nullable=False),
+        SparkTypes.StructField("url", SparkTypes.StringType(), nullable=False)
+    ]
+
+    # Some plugins need to add new fields to the schema
+    exec_hook(plugins, "document_schema", document_schema_columns)
+
+    document_schema = SparkTypes.StructType(document_schema_columns)
+
+    # Spark DataFrame containing everything we indexed
+    all_indexed_documents = sqlc.createDataFrame(sc.emptyRDD(), document_schema)
 
     for source_spec in args.source:
 
@@ -197,16 +212,20 @@ def spark_execute(sc):
                 return index_documents(ds)
 
         # Split indexing of each partition in Spark workers
-        indexed_documents = sc \
+        indexed_documents_rdd = sc \
             .parallelize(partitions, len(partitions)) \
-            .flatMap(index_partition)
+            .flatMap(index_partition) \
+
+        indexed_documents = sqlc.createDataFrame(indexed_documents_rdd, all_indexed_documents.schema)
+
+        indexed_documents.persist(StorageLevel.MEMORY_AND_DISK)
 
         # This .count() call is what triggers the Spark pipeline so far
         print "Source %s indexed %s documents" % (source_name, indexed_documents.count())
 
-        all_indexed_documents = all_indexed_documents.union(indexed_documents)
+        all_indexed_documents = all_indexed_documents.unionAll(indexed_documents)
 
-    exec_hook(plugins, "spark_pipeline_collect", sc, all_indexed_documents, indexer)
+    exec_hook(plugins, "spark_pipeline_collect", sc, sqlc, all_indexed_documents, indexer)
 
 
 def spark_main():
@@ -230,11 +249,12 @@ def spark_main():
         })
 
     sc = SparkContext(appName="Common Search Indexing", conf=conf, environment=executor_environment)
+    sqlc = SQLContext(sc)
 
     if config["ENV"] != "prod":
         sc.parallelize(range(4), 4).foreach(_setup_worker)
 
-    spark_execute(sc)
+    spark_execute(sc, sqlc)
 
     if config["ENV"] != "prod":
         sc.parallelize(range(4), 4).foreach(_teardown_worker)

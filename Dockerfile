@@ -108,8 +108,8 @@ RUN wget https://codeload.github.com/google/protobuf/tar.gz/v${PROTOBUF_VERSION}
 #
 
 ENV SPARK_VERSION 1.6.2
-ENV HADOOP_VERSION 2.6
-ENV SPARK_PACKAGE spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION
+ENV SPARK_HADOOP_VERSION 2.6
+ENV SPARK_PACKAGE spark-$SPARK_VERSION-bin-hadoop$SPARK_HADOOP_VERSION
 ENV SPARK_HOME /usr/$SPARK_PACKAGE
 ENV PATH $PATH:$SPARK_HOME/bin
 
@@ -135,6 +135,25 @@ RUN curl -sL --retry 3 \
 
 
 #
+# Hadoop
+#
+
+ENV HADOOP_VERSION 2.6.4
+ENV HADOOP_HOME /usr/hadoop
+ENV PATH $PATH:$HADOOP_HOME/bin
+RUN curl -s http://www.eu.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz | tar -xz -C /usr/
+RUN cd /usr/ && ln -s ./hadoop-$HADOOP_VERSION hadoop
+
+
+#
+# Spark packages
+#
+
+RUN mkdir -p /usr/spark/packages/
+RUN wget 'http://dl.bintray.com/spark-packages/maven/graphframes/graphframes/0.1.0-spark1.6/graphframes-0.1.0-spark1.6.jar' -P /usr/spark/packages/
+RUN wget 'https://repo1.maven.org/maven2/org/apache/parquet/parquet-tools/1.8.1/parquet-tools-1.8.1.jar' -P /usr/spark/packages/
+
+#
 # Install PyPy for performance testing
 #
 
@@ -153,6 +172,7 @@ ADD requirements.txt /requirements.txt
 RUN pip install --upgrade --ignore-installed pip
 
 RUN pip install -r /requirements.txt
+
 
 
 #

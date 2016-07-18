@@ -22,15 +22,15 @@ def test_simple_insert_and_search(indexer, searcher):
     indexer.client.flush()
     indexer.client.refresh()
 
-    assert indexed["docid"]
-    assert indexed["url"].url == "http://example.com"
+    assert indexed["id"]
+    assert indexed["url"] == "http://example.com"
     assert indexed["rank"] > 0
 
-    assert indexed2["docid"] != indexed["docid"]
+    assert indexed2["id"] != indexed["id"]
 
     search_results = searcher.client.search("hello")
     assert len(search_results["hits"]) == 1
-    assert search_results["hits"][0]["docid"] == indexed["docid"]
+    assert search_results["hits"][0]["id"] == indexed["id"]
     assert search_results["hits"][0]["score"] > 0
 
     search_results = searcher.client.search("world")
@@ -38,14 +38,14 @@ def test_simple_insert_and_search(indexer, searcher):
 
     search_results = searcher.client.search("world", domain="example2.com")
     assert len(search_results["hits"]) == 1
-    assert search_results["hits"][0]["docid"] == indexed2["docid"]
+    assert search_results["hits"][0]["id"] == indexed2["id"]
 
     # Make sure we index domain suffixes
     # https://github.com/commonsearch/cosr-back/issues/31
     search_results = searcher.client.search("fr")
     assert len(search_results["hits"]) == 1
-    assert search_results["hits"][0]["docid"] == indexed3["docid"]
+    assert search_results["hits"][0]["id"] == indexed3["id"]
 
     search_results = searcher.client.search("gouv")
     assert len(search_results["hits"]) == 1
-    assert search_results["hits"][0]["docid"] == indexed3["docid"]
+    assert search_results["hits"][0]["id"] == indexed3["id"]
