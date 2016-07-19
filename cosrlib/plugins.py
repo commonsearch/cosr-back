@@ -89,6 +89,6 @@ class Plugin(object):
         """ Filters a document pre-indexing """
         pass
 
-    def spark_pipeline_collect(self, sc, sqlc, df, indexer):
+    def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
         """ Performs Spark actions at the end of the pipeline """
         pass

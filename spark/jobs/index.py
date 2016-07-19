@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import time
 
 # Add the base cosr-back directory to the Python import path
 # pylint: disable=wrong-import-position
@@ -13,7 +14,7 @@ else:
 
 from pyspark import SparkContext, SparkConf  # pylint: disable=import-error
 from pyspark.sql import SQLContext  # pylint: disable=import-error
-from pyspark.sql import types as SparkTypes  # pylint: disable=import-error
+# from pyspark.sql import types as SparkTypes  # pylint: disable=import-error
 from pyspark.storagelevel import StorageLevel  # pylint: disable=import-error
 
 from cosrlib.sources import load_source
@@ -37,6 +38,9 @@ def get_args():
 
     parser.add_argument("--profile", action='store_true',
                         help="Profile Python usage")
+
+    parser.add_argument("--stop_delay", action='store', type=int, default=0,
+                        help="Seconds to wait before stopping the spark context")
 
     return parser.parse_args()
 
@@ -96,7 +100,7 @@ def index_from_source(source, _indexer, **kwargs):
 
 
 @ignore_exceptions_generator
-def index_documents(documentsource):
+def index_documents(documentsource, accumulator_indexed):
     """ Indexes documents from a source """
 
     _setup_worker()
@@ -104,6 +108,7 @@ def index_documents(documentsource):
     print "Now working on %s" % documentsource
 
     for resp in index_from_source(documentsource, indexer):
+        accumulator_indexed += 1
         yield resp
 
     indexer.flush()
@@ -124,19 +129,22 @@ def spark_execute(sc, sqlc):
     plugins = load_plugins(args.plugin)
     maxdocs = {}
 
-    # What fields will be send to Spark
-    document_schema_columns = [
-        SparkTypes.StructField("id", SparkTypes.LongType(), nullable=False),
-        SparkTypes.StructField("url", SparkTypes.StringType(), nullable=False)
-    ]
+    # What fields will be sent to Spark
+    # document_schema_columns = [
+    #     SparkTypes.StructField("id", SparkTypes.LongType(), nullable=False),
+    #     SparkTypes.StructField("url", SparkTypes.StringType(), nullable=False)
+    # ]
 
-    # Some plugins need to add new fields to the schema
-    exec_hook(plugins, "document_schema", document_schema_columns)
+    # # Some plugins need to add new fields to the schema
+    # exec_hook(plugins, "document_schema", document_schema_columns)
 
-    document_schema = SparkTypes.StructType(document_schema_columns)
+    # document_schema = SparkTypes.StructType(document_schema_columns)
 
     # Spark DataFrame containing everything we indexed
-    all_indexed_documents = sqlc.createDataFrame(sc.emptyRDD(), document_schema)
+
+    all_indexed_documents = sc.emptyRDD()  # sqlc.createDataFrame(sc.emptyRDD(), document_schema)
+
+    accumulator_indexed = sc.accumulator(0)
 
     for source_spec in args.source:
 
@@ -156,7 +164,7 @@ def spark_execute(sc, sqlc):
                     "plugins": plugins,
                     "maxdocs": maxdocs[source_spec]  # pylint: disable=cell-var-from-loop
                 })
-                return index_documents(ds)
+                return index_documents(ds, accumulator_indexed)
 
         elif source_name == "warc":
 
@@ -175,7 +183,7 @@ def spark_execute(sc, sqlc):
                     "plugins": plugins,
                     "maxdocs": maxdocs[source_spec]  # pylint: disable=cell-var-from-loop
                 })
-                return index_documents(ds)
+                return index_documents(ds, accumulator_indexed)
 
         elif source_name == "wikidata":
 
@@ -186,7 +194,7 @@ def spark_execute(sc, sqlc):
                     "maxdocs": maxdocs[source_spec],  # pylint: disable=cell-var-from-loop
                     "plugins": plugins
                 })
-                return index_documents(ds)
+                return index_documents(ds, accumulator_indexed)
 
         elif source_name == "corpus":
 
@@ -198,7 +206,7 @@ def spark_execute(sc, sqlc):
                     "docs": [doc],
                     "plugins": plugins
                 })
-                return index_documents(ds)
+                return index_documents(ds, accumulator_indexed)
 
         elif source_name == "url":
 
@@ -209,21 +217,21 @@ def spark_execute(sc, sqlc):
                     "urls": [url],
                     "plugins": plugins
                 })
-                return index_documents(ds)
+                return index_documents(ds, accumulator_indexed)
 
         # Split indexing of each partition in Spark workers
-        indexed_documents_rdd = sc \
+        indexed_documents = sc \
             .parallelize(partitions, len(partitions)) \
-            .flatMap(index_partition) \
-
-        indexed_documents = sqlc.createDataFrame(indexed_documents_rdd, all_indexed_documents.schema)
+            .flatMap(index_partition)
 
         indexed_documents.persist(StorageLevel.MEMORY_AND_DISK)
 
         # This .count() call is what triggers the Spark pipeline so far
-        print "Source %s indexed %s documents" % (source_name, indexed_documents.count())
+        print "Source %s indexed %s documents (acculumator=%s)" % (
+            source_name, indexed_documents.count(), accumulator_indexed.value
+        )
 
-        all_indexed_documents = all_indexed_documents.unionAll(indexed_documents)
+        all_indexed_documents = all_indexed_documents.union(indexed_documents)
 
     exec_hook(plugins, "spark_pipeline_collect", sc, sqlc, all_indexed_documents, indexer)
 
@@ -233,7 +241,7 @@ def spark_main():
 
     conf = SparkConf().setAll((
         ("spark.python.profile", "true" if args.profile else "false"),
-        ("spark.ui.enabled", "false" if config["ENV"] in ("local", "ci") else "false"),
+        ("spark.ui.enabled", "false" if config["ENV"] in ("ci", ) else "true"),
         ("spark.task.maxFailures", "20")
     ))
 
@@ -258,6 +266,9 @@ def spark_main():
 
     if config["ENV"] != "prod":
         sc.parallelize(range(4), 4).foreach(_teardown_worker)
+
+    if args.stop_delay:
+        time.sleep(args.stop_delay)
 
     if args.profile:
         sc.show_profiles()

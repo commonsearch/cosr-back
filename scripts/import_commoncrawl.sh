@@ -10,7 +10,7 @@
 WARC_COUNT=${1:-1}
 
 # Common Crawl ID. See http://blog.commoncrawl.org/ for latest dumps
-COMMONCRAWL_ID=${COMMONCRAWL_ID:-CC-MAIN-2016-22}
+COMMONCRAWL_ID=${COMMONCRAWL_ID:-CC-MAIN-2016-26}
 
 mkdir -p local-data/common-crawl/crawl-data
 

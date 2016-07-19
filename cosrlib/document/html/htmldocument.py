@@ -9,7 +9,7 @@ from .parsers import GUMBOCY_PARSER
 
 
 _RE_STRIP_TAGS = re.compile(r"<.*?>")
-_RE_VALID_NETLOC = re.compile(r"^[a-zA-Z0-9.:-]+$")
+_RE_VALID_NETLOC = re.compile(r"^[a-zA-Z0-9-]+\.[a-zA-Z0-9.:-]+$")
 
 
 class HTMLDocument(Document):
@@ -78,10 +78,15 @@ class HTMLDocument(Document):
             url = URL(base_url.urljoin(href), check_encoding=True)
 
             if (
-                # not url.parsed.username and
-                "@" not in url.parsed.path and
-                not href.startswith("<") and  # if path starts with "<", it's probably an html error
-                _RE_VALID_NETLOC.match(url.parsed.netloc)
+                    # Probably a forgotten mailto:
+                    "@" not in url.parsed.path and
+
+                    # Probably an html error
+                    not href.startswith("<") and
+
+                    # This regex catches several things we don't want to follow:
+                    # invalid hosts, TLDs, usernames, ..
+                    _RE_VALID_NETLOC.match(url.parsed.netloc)
             ):
                 hyperlinks.append({
                     "href": url,

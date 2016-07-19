@@ -30,11 +30,13 @@ class Words(Plugin):
             print "WORD MATCH", match, document.source_url.url
             spark_response["grep_words"] = list(match)
 
-    def spark_pipeline_collect(self, sc, sqlc, df, indexer):
+    def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
 
-        rdd = df \
-            .where(df.grep_words.isNotNull()) \
-            .map(lambda row: "%s %s" % (",".join(sorted(row["grep_words"])), row["url"]))
+        rdd = rdd \
+            .flatMap(lambda row: (
+                ["%s %s" % (",".join(sorted(row["grep_words"])), row["url"])]
+                if "grep_words" in row else []
+            ))
 
         if self.args.get("coalesce"):
             rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))

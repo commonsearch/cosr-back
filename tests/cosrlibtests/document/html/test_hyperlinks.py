@@ -88,6 +88,17 @@ def test_get_hyperlinks():
     </body></html>""", url="http://sub.test.com/page2/x.html")
     assert len(links) == 0
 
+    # We don't index TLDs either
+    links = _links("""<html><head><title>Test title</title></head><body>
+        <a href="http://com/x">Y</a>
+    </body></html>""", url="http://sub.test.com/page2/x.html")
+    assert len(links) == 0
+
+    links = _links("""<html><head><title>Test title</title></head><body>
+        <a href="http://newunknowntldxx/x">Y</a>
+    </body></html>""", url="http://sub.test.com/page2/x.html")
+    assert len(links) == 0
+
 
 def test_get_hyperlinks_base_tag():
 

@@ -86,10 +86,14 @@ devindex: restart_services
 # Day-to-day use commands
 #
 
-# Logins into the container
+# Logins into a new container
 docker_shell:
 	# -v "$(PWD)/../gumbocy:/cosr/gumbocy:rw"
-	docker run -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
+	docker run -p 4040 -p 4041 -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
+
+# Logins into the same container again
+docker_reshell:
+	sh -c 'docker exec -t -i `docker ps | grep commonsearch/local-back | cut -f 1 -d " "` bash'
 
 # Stops all docker containers on this machine
 docker_stop_all:
@@ -133,9 +137,11 @@ reindex10:
 
 # Do a standard reindex
 reindex_standard:
+
 	rm -rf ./out/
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit spark/jobs/index.py --source wikidata:maxdocs=10000 --source commoncrawl:limit=10 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:dir=/cosr/back/out/,coalesce=1
+	#  --source wikidata:maxdocs=10000
+	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=4,maxdocs=24000 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:dir=/cosr/back/out/,coalesce=1
 
 pagerank_standard:
 	SPARK_CONF_DIR=/cosr/back/spark/conf spark-submit --packages graphframes:graphframes:0.1.0-spark1.6 spark/jobs/pagerank.py --edges /cosr/back/out/edges/ --vertices /cosr/back/out/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 10

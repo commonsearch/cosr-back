@@ -6,7 +6,6 @@ from cosrlib.plugins import Plugin
 from cosrlib.url import URL
 
 
-
 class DomainToDomain(Plugin):
     """ Saves a graph of domain=>domain links in text format """
 
@@ -25,7 +24,7 @@ class DomainToDomain(Plugin):
             {"href": row["href"].url} for row in document.get_external_hyperlinks()
         ]
 
-    def spark_pipeline_collect(self, sc, sqlc, df, indexer):
+    def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
 
         def iter_links_domain(record):
             """ Returns all the parsed links in this record as (from_domain, to_domain) tuples  """
@@ -38,7 +37,7 @@ class DomainToDomain(Plugin):
 
             return [(record_domain, d) for d in domains]
 
-        rdd = df.flatMap(iter_links_domain).distinct().map(lambda row: "%s %s" % row)
+        rdd = rdd.flatMap(iter_links_domain).distinct().map(lambda row: "%s %s" % row)
 
         if self.args.get("coalesce"):
             rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))
@@ -49,7 +48,7 @@ class DomainToDomain(Plugin):
 class DomainToDomainParquet(DomainToDomain):
     """ Saves a graph of domain=>domain links in Apache Parquet format """
 
-    def spark_pipeline_collect(self, sc, sqlc, df, indexer):
+    def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
 
         edge_graph_schema = SparkTypes.StructType([
             SparkTypes.StructField("src", SparkTypes.LongType(), nullable=False),
@@ -70,16 +69,14 @@ class DomainToDomainParquet(DomainToDomain):
             link_ids = set(indexer.urlclient.get_domain_ids(domains))
             link_ids.discard(record_domain)
 
-            return [{"src": record_domain, "dst": d} for d in link_ids]
+            return [(record_domain, d) for d in link_ids]
 
-        rdd = df.flatMap(iter_links_domain)
-
-        edge_df = sqlc.createDataFrame(rdd, edge_graph_schema)
-
-        edge_df = edge_df.distinct()
+        rdd_couples = rdd.flatMap(iter_links_domain).distinct()
 
         if self.args.get("coalesce"):
-            edge_df = edge_df.coalesce(int(self.args["coalesce"]))
+            rdd_couples = rdd_couples.coalesce(int(self.args["coalesce"]))
+
+        edge_df = sqlc.createDataFrame(rdd_couples, edge_graph_schema)
 
         edge_df.write.parquet(os.path.join(self.args["dir"], "edges"))
 
@@ -92,13 +89,10 @@ class DomainToDomainParquet(DomainToDomain):
             return list(domains)
 
         def add_domain_id(domain):
-            return {
-                "id": indexer.urlclient.get_domain_id("http://%s" % domain),
-                "domain": domain
-            }
+            return (indexer.urlclient.get_domain_id("http://%s" % domain), domain)
 
-        rdd_domains = df.flatMap(iter_domain).distinct().map(add_domain_id)
+        rdd_domains = rdd.flatMap(iter_domain).distinct().map(add_domain_id).coalesce(1)
 
-        vertex_df = sqlc.createDataFrame(rdd_domains, vertex_graph_schema).coalesce(1)
+        vertex_df = sqlc.createDataFrame(rdd_domains, vertex_graph_schema)
 
         vertex_df.write.parquet(os.path.join(self.args["dir"], "vertices"))
