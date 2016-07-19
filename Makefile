@@ -144,7 +144,11 @@ reindex_standard:
 	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=4,maxdocs=24000 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:dir=/cosr/back/out/,coalesce=1
 
 pagerank_standard:
-	SPARK_CONF_DIR=/cosr/back/spark/conf spark-submit --packages graphframes:graphframes:0.1.0-spark1.6 spark/jobs/pagerank.py --edges /cosr/back/out/edges/ --vertices /cosr/back/out/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 10
+	rm -rf /cosr/back/out/pagerank/
+	SPARK_CONF_DIR=/cosr/back/spark/conf spark-submit --packages graphframes:graphframes:0.1.0-spark1.6 spark/jobs/pagerank.py --gzip --edges /cosr/back/out/edges/ --vertices /cosr/back/out/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 10
+	@echo ""
+	@echo "Top 10 domains:"
+	zcat out/pagerank/part-00000.gz | head
 
 # Run the explainer web service inside Docker
 docker_explainer:

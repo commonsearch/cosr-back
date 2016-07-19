@@ -42,7 +42,10 @@ class DomainToDomain(Plugin):
         if self.args.get("coalesce"):
             rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))
 
-        rdd.saveAsTextFile(self.args["dir"])
+        codec = None
+        if self.args.get("gzip"):
+            codec = "org.apache.hadoop.io.compress.GzipCodec"
+        rdd.saveAsTextFile(self.args["dir"], codec)
 
 
 class DomainToDomainParquet(DomainToDomain):

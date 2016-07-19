@@ -36,6 +36,9 @@ def get_args():
     parser.add_argument("--dump", default=None, type=str,
                         help="Directory for storing list of pageranks by domain")
 
+    parser.add_argument("--gzip", default=False, action="store_true",
+                        help="Save dump as gzip")
+
     parser.add_argument("--profile", action='store_true',
                         help="Profile Python usage")
 
@@ -58,7 +61,13 @@ def spark_execute(sc, sqlc):
     ).coalesce(1)
 
     if args.dump:
-        rdd.saveAsTextFile(args.dump)
+
+        codec = None
+        if args.gzip:
+            codec = "org.apache.hadoop.io.compress.GzipCodec"
+
+        rdd.saveAsTextFile(args.dump, codec)
+
     else:
         print rdd.collect()
 
@@ -68,7 +77,7 @@ def spark_main():
 
     conf = SparkConf().setAll((
         ("spark.python.profile", "true" if args.profile else "false"),
-        ("spark.ui.enabled", "false" if config["ENV"] in ("local", "ci") else "false"),
+        ("spark.ui.enabled", "false" if config["ENV"] in ("ci", ) else "true"),
         ("spark.task.maxFailures", "20")
     ))
 
