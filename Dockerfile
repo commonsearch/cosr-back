@@ -6,6 +6,19 @@ FROM debian:jessie
 # https://github.com/docker-library/openjdk/blob/master/8-jre/Dockerfile
 
 #
+# httpredir.debian.org is often unreliable
+# https://github.com/docker-library/buildpack-deps/issues/40
+#
+
+RUN echo \
+   'deb ftp://ftp.us.debian.org/debian/ jessie main\n \
+    deb ftp://ftp.us.debian.org/debian/ jessie-updates main\n \
+    deb http://security.debian.org jessie/updates main\n' \
+    > /etc/apt/sources.list
+
+RUN echo 'deb http://ftp.us.debian.org/debian jessie-backports main' > /etc/apt/sources.list.d/jessie-backports.list
+
+#
 # General packages & dependencies
 #
 
@@ -17,9 +30,7 @@ ENV JAVA_DEBIAN_VERSION 8u91-b14-1~bpo8+1
 # and https://github.com/docker-library/java/issues/19#issuecomment-70546872
 ENV CA_CERTIFICATES_JAVA_VERSION 20140324
 
-RUN echo 'deb http://httpredir.debian.org/debian jessie-backports main' > /etc/apt/sources.list.d/jessie-backports.list
-
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+RUN apt-get clean && apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     wget \
