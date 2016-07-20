@@ -1,4 +1,4 @@
-from pyspark.sql import types as SparkTypes  # pylint: disable=import-error
+from pyspark.sql import types as SparkTypes
 from cosrlib.plugins import Plugin
 
 

@@ -1,5 +1,6 @@
 [MASTER]
 ignore=urlserver_pb2.py
+init-hook='import sys; sys.path.append("/usr/spark/python")'
 
 [TYPECHECK]
 extension-pkg-whitelist=gumbocy,rocksdb,mmh3

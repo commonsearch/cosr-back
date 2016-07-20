@@ -1,6 +1,5 @@
 import os
 import sys
-import argparse
 
 # Add the base cosr-back directory to the Python import path
 # pylint: disable=wrong-import-position
@@ -8,100 +7,57 @@ if os.environ.get("COSR_PATH_BACK"):
     sys.path.insert(-1, os.environ.get("COSR_PATH_BACK"))
 elif os.path.isdir("/cosr/back"):
     sys.path.insert(-1, "/cosr/back")
-else:
-    sys.path.insert(-1, os.path.normpath(os.path.join(__file__, "../../../")))
-
-from pyspark import SparkContext, SparkConf  # pylint: disable=import-error
-from pyspark.sql import SQLContext  # pylint: disable=import-error
-
-from cosrlib.config import config
 
 from graphframes import GraphFrame  # pylint: disable=import-error
 
-
-def get_args():
-    """ Returns the parsed arguments from the command line """
-
-    parser = argparse.ArgumentParser(description='Compute PageRank from a WebGraph dump')
-
-    parser.add_argument("--edges", default=None, type=str,
-                        help="Link to a parquet file containing the edges")
-
-    parser.add_argument("--vertices", default=None, type=str,
-                        help="Link to a parquet file containing the vertices")
-
-    parser.add_argument("--maxiter", default=5, type=int,
-                        help="Maximum iterations for the PageRank algorithm")
-
-    parser.add_argument("--dump", default=None, type=str,
-                        help="Directory for storing list of pageranks by domain")
-
-    parser.add_argument("--gzip", default=False, action="store_true",
-                        help="Save dump as gzip")
-
-    parser.add_argument("--profile", action='store_true',
-                        help="Profile Python usage")
-
-    return parser.parse_args()
-
-# Shared variables while indexing
-args = get_args()
+from cosrlib.spark import SparkJob
 
 
-def spark_execute(sc, sqlc):
+class PageRankJob(SparkJob):
+    """ Compute PageRank from a WebGraph dump """
 
-    edge_df = sqlc.read.load(args.edges)
-    vertex_df = sqlc.read.load(args.vertices)
+    name = "Common Search PageRank"
 
-    graph = GraphFrame(vertex_df, edge_df)
+    def add_arguments(self, parser):
 
-    withPageRank = graph.pageRank(maxIter=args.maxiter)
-    rdd = withPageRank.vertices.sort(withPageRank.vertices.pagerank.desc()).map(
-        lambda x: "%s %s" % (x.domain, x.pagerank)
-    ).coalesce(1)
+        parser.add_argument("--edges", default=None, type=str,
+                            help="Link to a parquet file containing the edges")
 
-    if args.dump:
+        parser.add_argument("--vertices", default=None, type=str,
+                            help="Link to a parquet file containing the vertices")
 
-        codec = None
-        if args.gzip:
-            codec = "org.apache.hadoop.io.compress.GzipCodec"
+        parser.add_argument("--maxiter", default=5, type=int,
+                            help="Maximum iterations for the PageRank algorithm")
 
-        rdd.saveAsTextFile(args.dump, codec)
+        parser.add_argument("--dump", default=None, type=str,
+                            help="Directory for storing list of pageranks by domain")
 
-    else:
-        print rdd.collect()
+        parser.add_argument("--gzip", default=False, action="store_true",
+                            help="Save dump as gzip")
 
+    def run_job(self, sc, sqlc):
 
-def spark_main():
-    """ Main Spark entry point """
+        edge_df = sqlc.read.load(self.args.edges)
+        vertex_df = sqlc.read.load(self.args.vertices)
 
-    conf = SparkConf().setAll((
-        ("spark.python.profile", "true" if args.profile else "false"),
-        ("spark.ui.enabled", "false" if config["ENV"] in ("ci", ) else "true"),
-        ("spark.task.maxFailures", "20")
-    ))
+        graph = GraphFrame(vertex_df, edge_df)
 
-    # TODO could this be set somewhere in cosr-ops instead?
-    executor_environment = {
-        "_SPARK_IS_WORKER": "1"
-    }
-    if config["ENV"] == "prod":
-        executor_environment.update({
-            "PYTHONPATH": "/cosr/back",
-            "PYSPARK_PYTHON": "/cosr/back/venv/bin/python",
-            "LD_LIBRARY_PATH": "/usr/local/lib"
-        })
+        withPageRank = graph.pageRank(maxIter=self.args.maxiter)
+        rdd = withPageRank.vertices.sort(withPageRank.vertices.pagerank.desc()).map(
+            lambda x: "%s %s" % (x.domain, x.pagerank)
+        ).coalesce(1)
 
-    sc = SparkContext(appName="Common Search PageRank", conf=conf, environment=executor_environment)
-    sqlc = SQLContext(sc)
+        if self.args.dump:
 
-    spark_execute(sc, sqlc)
+            codec = None
+            if self.args.gzip:
+                codec = "org.apache.hadoop.io.compress.GzipCodec"
 
-    if args.profile:
-        sc.show_profiles()
+            rdd.saveAsTextFile(self.args.dump, codec)
 
-    sc.stop()
-
+        else:
+            print rdd.collect()
 
 if __name__ == "__main__":
-    spark_main()
+    job = PageRankJob()
+    job.run()
