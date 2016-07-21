@@ -67,10 +67,26 @@ class SparkJob(object):
 
     def setup_spark_context(self):
 
+        # http://spark.apache.org/docs/latest/configuration.html
         conf = SparkConf().setAll((
             ("spark.python.profile", "true" if self.args.profile else "false"),
+
+            # Protect against memory leaks (which we seem to have at the moment)
+            ("spark.python.worker.reuse", "true" if config["ENV"] in ("ci", ) else "false"),
+
             ("spark.ui.enabled", "false" if config["ENV"] in ("ci", ) else "true"),
-            ("spark.task.maxFailures", "20")
+            ("spark.task.maxFailures", "50"),
+
+            # http://deploymentzone.com/2015/12/20/s3a-on-spark-on-aws-ec2/
+            ("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem"),
+            ("spark.hadoop.fs.s3a.access.key", os.getenv("AWS_ACCESS_KEY_ID", "")),
+            ("spark.hadoop.fs.s3a.secret.key", os.getenv("AWS_SECRET_ACCESS_KEY", "")),
+            ("spark.hadoop.fs.s3a.buffer.dir", "/tmp"),
+            # ("spark.hadoop.fs.s3a.fast.upload", "true"),
+
+            ("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+            # ("spark.hadoop.parquet.enable.summary-metadata", "false")
+            # "parquet.metadata.read.parallelism"
         ))
 
         executor_environment = {
@@ -84,6 +100,7 @@ class SparkJob(object):
             })
 
         sc = SparkContext(appName=self.name, conf=conf, environment=executor_environment)
+
         sqlc = SQLContext(sc)
 
         if config["ENV"] != "prod":
