@@ -5,7 +5,7 @@ from cosrlib.plugins import Plugin
 class Words(Plugin):
     """ Finds documents containing a list of words in their indexable text (visible, non-boilerplate) """
 
-    hooks = frozenset(["document_post_index", "spark_pipeline_collect", "document_schema"])
+    hooks = frozenset(["document_post_index", "spark_pipeline_action", "document_schema"])
 
     def init(self):
         if not self.args.get("words"):
@@ -30,7 +30,7 @@ class Words(Plugin):
             print "WORD MATCH", match, document.source_url.url
             spark_response["grep_words"] = list(match)
 
-    def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
+    def spark_pipeline_action(self, sc, sqlc, rdd, document_schema, indexer):
 
         rdd = rdd \
             .flatMap(lambda row: (
@@ -41,7 +41,7 @@ class Words(Plugin):
         if self.args.get("coalesce"):
             rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))
 
-        rdd.saveAsTextFile(self.args["dir"])
+        rdd.saveAsTextFile(self.args["path"])
 
 
 class TextRegex(Plugin):

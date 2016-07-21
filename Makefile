@@ -140,15 +140,19 @@ reindex_standard:
 
 	rm -rf ./out/
 	./scripts/elasticsearch_reset.py --delete
-	#  --source wikidata:maxdocs=10000
-	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=4,maxdocs=24000 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:dir=/cosr/back/out/,coalesce=1
+	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --stop_delay 600 --source wikidata:maxdocs=10000,block=1 --source commoncrawl:limit=4,maxdocs=24000,block=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:path=/cosr/back/out/,coalesce=1
 
 pagerank_standard:
-	rm -rf /cosr/back/out/pagerank/
+	rm -rf ./out/pagerank/
 	SPARK_CONF_DIR=/cosr/back/spark/conf spark-submit --packages graphframes:graphframes:0.1.0-spark1.6 spark/jobs/pagerank.py --gzip --edges /cosr/back/out/edges/ --vertices /cosr/back/out/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 10
 	@echo ""
 	@echo "Top 10 domains:"
 	zcat out/pagerank/part-00000.gz | head
+
+dump_standard:
+	rm -rf ./out/
+	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=4,maxdocs=24000 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata
+
 
 # Run the explainer web service inside Docker
 docker_explainer:

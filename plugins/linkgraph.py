@@ -10,7 +10,7 @@ from cosrlib.url import URL
 class DomainToDomain(Plugin):
     """ Saves a graph of domain=>domain links in text format """
 
-    hooks = frozenset(["document_post_index", "spark_pipeline_collect", "document_schema"])
+    hooks = frozenset(["document_post_index", "spark_pipeline_action", "document_schema"])
 
     def document_schema(self, schema):
         schema.append(SparkTypes.StructField("external_links", SparkTypes.ArrayType(SparkTypes.StructType([
@@ -26,10 +26,10 @@ class DomainToDomain(Plugin):
         ]
 
     def init(self):
-        if self.args["dir"] and os.path.isdir(self.args["dir"]):
-            shutil.rmtree(self.args["dir"])
+        if self.args["path"] and os.path.isdir(self.args["path"]):
+            shutil.rmtree(self.args["path"])
 
-    def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
+    def spark_pipeline_action(self, sc, sqlc, rdd, document_schema, indexer):
 
         def iter_links_domain(record):
             """ Returns all the parsed links in this record as (from_domain, to_domain) tuples  """
@@ -51,13 +51,13 @@ class DomainToDomain(Plugin):
         if self.args.get("gzip"):
             codec = "org.apache.hadoop.io.compress.GzipCodec"
 
-        rdd.saveAsTextFile(self.args["dir"], codec)
+        rdd.saveAsTextFile(self.args["path"], codec)
 
 
 class DomainToDomainParquet(DomainToDomain):
     """ Saves a graph of domain=>domain links in Apache Parquet format """
 
-    def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
+    def spark_pipeline_action(self, sc, sqlc, rdd, document_schema, indexer):
 
         edge_graph_schema = SparkTypes.StructType([
             SparkTypes.StructField("src", SparkTypes.LongType(), nullable=False),
@@ -87,7 +87,7 @@ class DomainToDomainParquet(DomainToDomain):
 
         edge_df = sqlc.createDataFrame(rdd_couples, edge_graph_schema)
 
-        edge_df.write.parquet(os.path.join(self.args["dir"], "edges"))
+        edge_df.write.parquet(os.path.join(self.args["path"], "edges"))
 
         def iter_domain(record):
             """ Returns all the domains found in links """
@@ -104,4 +104,4 @@ class DomainToDomainParquet(DomainToDomain):
 
         vertex_df = sqlc.createDataFrame(rdd_domains, vertex_graph_schema)
 
-        vertex_df.write.parquet(os.path.join(self.args["dir"], "vertices"))
+        vertex_df.write.parquet(os.path.join(self.args["path"], "vertices"))

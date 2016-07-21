@@ -67,7 +67,7 @@ After this, if you have a `cosr-front` instance connected to the same Elasticsea
 Common Search supports the insertion of user-provided plugins in the indexation pipeline. Some are included by default, for instance:
 
 ```
-spark-submit spark/jobs/index.py --source url:https://about.commonsearch.org/ --plugin plugins.filter.All:index=0 --plugin 'plugins.grep.Words:words=common search,dir=/tmp/grep_result'
+spark-submit spark/jobs/index.py --source url:https://about.commonsearch.org/ --plugin plugins.filter.All:index=0 --plugin 'plugins.grep.Words:words=common search,path=/tmp/grep_result'
 ```
 
 See the [plugins/](plugins/) directory for more examples.

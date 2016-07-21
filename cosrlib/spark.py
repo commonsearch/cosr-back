@@ -100,7 +100,10 @@ class SparkJob(object):
             sc.show_profiles()
 
         if self.args.stop_delay:
-            time.sleep(self.args.stop_delay)
+            try:
+                time.sleep(self.args.stop_delay)
+            except KeyboardInterrupt:
+                pass
 
         sc.stop()
 

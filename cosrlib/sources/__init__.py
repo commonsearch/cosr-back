@@ -25,7 +25,7 @@ class Source(Plugin):
 
         do_parse, do_index, do_index_body = True, True, True
 
-        for hook in self.filter_url_hooks:
+        for _, hook in self.filter_url_hooks:
             res = hook(url)
 
             if res[0] is not None:

@@ -143,6 +143,17 @@ class Indexer(object):
         else:
             rank, _ = self.ranker.get_global_document_rank(doc, parsed["url_metadata"])
 
+        # Return structured data for Spark operations that may happen after this
+        metadata = {
+            "id": docid,
+            "url": parsed["url"].url,
+            "rank": rank
+        }
+
+        # We are not actually indexing this document, only return its metadata
+        if doc.index_level == 0:
+            return metadata
+
         # Insert in Document store
         es_doc = {
             "url": parsed["url"].url.decode("utf-8"),
@@ -150,8 +161,7 @@ class Indexer(object):
             "summary": parsed["summary_formatted"]
         }
 
-        if doc.index_level > 0:
-            self.es_docs.index(docid, es_doc)
+        self.es_docs.index(docid, es_doc)
 
         # Insert in text index
         es_text = {
@@ -180,21 +190,12 @@ class Indexer(object):
 
         # print es_text
 
-        if doc.index_level > 0:
+        # Assemble the extracted word groups
+        # TODO weights! https://github.com/commonsearch/cosr-back/issues/5
+        if doc.index_level > 1:
+            word_groups = doc.get_word_groups()
+            es_text["body"] = u" ".join([wg["words"].decode("utf-8", "ignore") for wg in word_groups])
 
-            # Assemble the extracted word groups
-            # TODO weights! https://github.com/commonsearch/cosr-back/issues/5
-            if doc.index_level > 1:
-                word_groups = doc.get_word_groups()
-                es_text["body"] = u" ".join([wg["words"].decode("utf-8", "ignore") for wg in word_groups])
+        self.es_text.index(docid, es_text)
 
-            self.es_text.index(docid, es_text)
-
-        # Return structured data for Spark operations that may happen after this
-        ret = {
-            "id": docid,
-            "url": parsed["url"].url,
-            "rank": rank
-        }
-
-        return ret
+        return metadata

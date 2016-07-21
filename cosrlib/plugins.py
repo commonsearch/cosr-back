@@ -25,15 +25,22 @@ def load_plugins(specs):
         if spec:
             plugin = load_plugin(*parse_plugin_cli_args(spec))
             for hook in plugin.hooks:
-                hooks[hook].append(getattr(plugin, hook))
+                hooks[hook].append((spec, getattr(plugin, hook)))
 
     return hooks
 
 
 def exec_hook(plugins, hook, *args, **kwargs):
     """ Executes one hook on a list of plugins """
-    for plugin_hook in plugins[hook]:
-        plugin_hook(*args, **kwargs)
+    ret = []
+    for spec, plugin_hook in plugins[hook]:
+        print "Executing hook %s of plugin %s" % (hook, spec)
+        ret.append(plugin_hook(*args, **kwargs))
+
+        if ret[-1] == PLUGIN_HOOK_ABORT:
+            print "Plugin %s requested abort for hook %s" % (spec, hook)
+            break
+    return ret
 
 
 def parse_plugin_cli_args(plugin_spec):
@@ -72,6 +79,13 @@ def parse_plugin_cli_args(plugin_spec):
         return (plugin_name, {plugin_name: raw_args})
 
 
+class PLUGIN_HOOK_ABORT(object):
+    """ Special value to be returned hen a plugin wants to abort the current hook, thus
+        avoiding to run the remaining plugins in this hook
+    """
+    pass
+
+
 class Plugin(object):
     """ Base plugin class """
 
@@ -83,12 +97,4 @@ class Plugin(object):
 
     def init(self):
         """ Initialize the plugin """
-        pass
-
-    def document_pre_index(self, document):
-        """ Filters a document pre-indexing """
-        pass
-
-    def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
-        """ Performs Spark actions at the end of the pipeline """
         pass
