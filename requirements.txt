@@ -53,7 +53,7 @@ cchardet==1.0.0
 http_parser==0.8.3
 
 # Gumbo binding for HTML parsing
--e git+git://github.com/commonsearch/gumbocy.git@aafb83462bf4b16a2f9071e6f444a9e56da1cc4d#egg=gumbocy
+-e git+git://github.com/commonsearch/gumbocy.git@4411c40c2b7c83c6a292de3b42581478c5e3c121#egg=gumbocy
 
 # Used for performance improvements in critical parts of the code
 Cython==0.24

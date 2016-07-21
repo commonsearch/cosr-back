@@ -151,7 +151,13 @@ pagerank_standard:
 
 dump_standard:
 	rm -rf ./out/
-	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=4,maxdocs=24000 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata
+	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=4 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata,abort=1 --plugin plugins.linkgraph.DomainToDomainParquet
+
+viewdump_standard:
+	hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json ./out/metadata/
+
+graph_standard:
+	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source parquet:path=./out/metadata/ --plugin plugins.linkgraph.DomainToDomainParquet:path=/cosr/back/out/,coalesce=1
 
 
 # Run the explainer web service inside Docker

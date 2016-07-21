@@ -18,16 +18,19 @@ class DomainToDomain(Plugin):
             # TODO: link text
         ])), nullable=True))
 
-    def document_post_index(self, document, spark_response):
+    def document_post_index(self, document, metadata):
         """ Filters a document post-indexing """
 
-        spark_response["external_links"] = [
+        metadata["external_links"] = [
             {"href": row["href"].url} for row in document.get_external_hyperlinks()
         ]
 
     def init(self):
-        if self.args["path"] and os.path.isdir(self.args["path"]):
-            shutil.rmtree(self.args["path"])
+        if self.args.get("path"):
+            if os.path.isdir(os.path.join(self.args["path"], "edges")):
+                shutil.rmtree(os.path.join(self.args["path"], "edges"))
+            if os.path.isdir(os.path.join(self.args["path"], "vertices")):
+                shutil.rmtree(os.path.join(self.args["path"], "vertices"))
 
     def spark_pipeline_action(self, sc, sqlc, rdd, document_schema, indexer):
 

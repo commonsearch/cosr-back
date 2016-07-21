@@ -34,11 +34,11 @@ def exec_hook(plugins, hook, *args, **kwargs):
     """ Executes one hook on a list of plugins """
     ret = []
     for spec, plugin_hook in plugins[hook]:
-        print "Executing hook %s of plugin %s" % (hook, spec)
+        # print "Executing hook %s of plugin %s" % (hook, spec)
         ret.append(plugin_hook(*args, **kwargs))
 
         if ret[-1] == PLUGIN_HOOK_ABORT:
-            print "Plugin %s requested abort for hook %s" % (spec, hook)
+            # print "Plugin %s requested abort for hook %s" % (spec, hook)
             break
     return ret
 

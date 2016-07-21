@@ -44,7 +44,7 @@ class HTMLDocument(Document):
 
         GUMBOCY_PARSER.parse(self.source_data)
 
-        self.analysis = GUMBOCY_PARSER.analyze()
+        self.analysis = GUMBOCY_PARSER.analyze(url=self.source_url.url)
 
         for wg in (self.analysis.get("word_groups") or []):
             self.add_word_group(
@@ -53,6 +53,13 @@ class HTMLDocument(Document):
             )
 
         return self
+
+    def get_internal_hyperlinks(self):
+        """ Returns a list of followable URLs to other domains found in the document """
+        return [{
+            "path": href,  # Unresolved raw path!
+            "words": self._split_words(words)
+        } for href, words in self.analysis["internal_hyperlinks"]]
 
     def get_external_hyperlinks(self):
         """ Returns a list of followable URLs to other domains found in the document """

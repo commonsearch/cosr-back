@@ -20,7 +20,7 @@ class Words(Plugin):
             nullable=True
         ))
 
-    def document_post_index(self, document, spark_response):
+    def document_post_index(self, document, metadata):
         """ Filters a document post-indexing """
 
         doc_words = document.get_all_words()
@@ -28,7 +28,7 @@ class Words(Plugin):
         match = doc_words.intersection(self.words)
         if len(match) > 0:
             print "WORD MATCH", match, document.source_url.url
-            spark_response["grep_words"] = list(match)
+            metadata["grep_words"] = list(match)
 
     def spark_pipeline_action(self, sc, sqlc, rdd, document_schema, indexer):
 

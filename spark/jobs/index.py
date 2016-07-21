@@ -193,15 +193,15 @@ class IndexJob(SparkJob):
 
             print "Indexing", document.source_url.url
 
-            resp = {}
+            metadata = {}
 
-            exec_hook(self.plugins, "document_pre_index", document, resp)
+            exec_hook(self.plugins, "document_pre_index", document, metadata)
 
-            resp.update(_indexer.index_document(document, **kwargs))
+            metadata.update(_indexer.index_document(document, **kwargs))
 
-            exec_hook(self.plugins, "document_post_index", document, resp)
+            exec_hook(self.plugins, "document_post_index", document, metadata)
 
-            yield resp
+            yield metadata
 
     @ignore_exceptions_generator
     def index_documents(self, documentsource):

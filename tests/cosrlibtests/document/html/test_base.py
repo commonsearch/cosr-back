@@ -110,11 +110,45 @@ def test_hidden_text():
 
 def test_get_hyperlinks():
 
-    # When none is given, we take the URL
-    html = """<html><head></head><body>before <a href="http://example.com/page1">link text</a> after</body></html>"""
+    html = """<html><head></head><body>
+        before
+        <a href="http://example.com/page1">link text</a>
+        after
+
+        <a href="/page2">relative2</a>
+        <a href="page3?q=1#d">relative3</a>
+        <a href="http://other.example.com/page4">absolute4</a>
+        <a href="//other.example.com/page5?q=1#d">absolute5</a>
+        <a href="https://other.example.com/page6?q=1#d">absolute6</a>
+        <a href="javascript:func()">js1</a>
+
+        </body></html>"""
     page = HTMLDocument(html, url="http://example.com/page.html").parse()
 
-    links = page.get_hyperlinks()
-    assert len(links) == 1
-    assert links[0]["href"].url == "http://example.com/page1"
+    links = page.get_external_hyperlinks()
+    assert len(links) == 3
+    assert links[0]["href"].url == "http://other.example.com/page4"
+    assert links[0]["words"] == ["absolute4"]
+
+    assert links[1]["href"].url == "http://other.example.com/page5?q=1#d"
+    assert links[1]["words"] == ["absolute5"]
+
+    assert links[2]["href"].url == "https://other.example.com/page6?q=1#d"
+    assert links[2]["words"] == ["absolute6"]
+
+    # This doesn't return URLs, it returns strings (they are paths)
+    links = page.get_internal_hyperlinks()
+    assert len(links) == 3
+    assert links[0]["path"] == "/page1"
     assert links[0]["words"] == ["link", "text"]
+
+    assert links[1]["path"] == "/page2"
+    assert links[1]["words"] == ["relative2"]
+
+    assert links[2]["path"] == "page3?q=1#d"
+    assert links[2]["words"] == ["relative3"]
+
+    # All links in absolute
+    links = page.get_hyperlinks()
+    assert len(links) == 6
+    assert links[2]["href"].url == "http://example.com/page3?q=1#d"

@@ -118,6 +118,10 @@ class Document(object):
         """ Returns a list of followable URLs found in the document """
         return []
 
+    def get_internal_hyperlinks(self):
+        """ Returns a list of followable URLs found in the document """
+        return []
+
     def get_head_metas(self):
         """ Returns metadata from the document header """
         return {}
