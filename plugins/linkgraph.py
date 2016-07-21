@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from pyspark.sql import types as SparkTypes
 
@@ -24,6 +25,10 @@ class DomainToDomain(Plugin):
             {"href": row["href"].url} for row in document.get_external_hyperlinks()
         ]
 
+    def init(self):
+        if self.args["dir"] and os.path.isdir(self.args["dir"]):
+            shutil.rmtree(self.args["dir"])
+
     def spark_pipeline_collect(self, sc, sqlc, rdd, indexer):
 
         def iter_links_domain(record):
@@ -45,6 +50,7 @@ class DomainToDomain(Plugin):
         codec = None
         if self.args.get("gzip"):
             codec = "org.apache.hadoop.io.compress.GzipCodec"
+
         rdd.saveAsTextFile(self.args["dir"], codec)
 
 

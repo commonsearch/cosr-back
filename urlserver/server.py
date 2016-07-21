@@ -45,7 +45,7 @@ class URLServer(RPCServer):
         ret = []
         for url in urls:
 
-            data = db.get(url)
+            data = db.get(url) if db.db else None
 
             # If the URL has been in none of our static databases, we still want to return an ID
             if data is None:

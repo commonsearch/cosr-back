@@ -60,6 +60,9 @@ class ElasticsearchBulkIndexer(object):
     def refresh(self):
         """ Sends a "refresh" to the ES index, forcing the actual indexing of what was sent up until now """
 
+        if not self.connected:
+            return
+
         if config["ENV"] not in ("local", "ci"):
             raise Exception("refresh() not allowed in env %s" % config["ENV"])
 
@@ -68,11 +71,11 @@ class ElasticsearchBulkIndexer(object):
     def flush(self, retries=10):
         """ Sends the current indexing batch to ES """
 
-        if not self.connected:
-            self.connect()
-
         if len(self.buffer) == 0:
             return
+
+        if not self.connected:
+            self.connect()
 
         self.total_size += len(self.buffer)
 
