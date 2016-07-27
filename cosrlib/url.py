@@ -1,10 +1,20 @@
 # pylint: disable=too-many-branches
 import urllib
-import tldextract as _tldextract
+# import tldextract as _tldextract
 import urlparse4 as urlparse
+from pyfaup.faup import Faup
+
+
+def tld_extract(domain):
+
+    if "_faup" not in __builtins__:
+        __builtins__["_faup"] = Faup()
+    _faup = __builtins__["_faup"]
+    _faup.decode(domain.decode("utf-8"))
+    return (_faup.get_subdomain() or "", _faup.get_domain_without_tld() or "", _faup.get_tld() or "")
 
 # TODO init lazily
-_tldextractor = _tldextract.TLDExtract(suffix_list_url=False)
+# _tldextractor = _tldextract.TLDExtract(suffix_list_urls=None)
 
 
 class URL(object):
@@ -54,7 +64,9 @@ class URL(object):
             #     value = urlparse.urlsplit("about:blank")
 
         elif attr == "tldextracted":
-            value = _tldextractor(self.url)
+
+            value = tld_extract(self.parsed.netloc)
+            # value = _tldextractor(self.url)
 
         elif attr == "normalized":
             value = urlparse.urlunsplit((
@@ -91,13 +103,13 @@ class URL(object):
 
         # Pay-level domain
         elif attr == "pld":
-            value = "%s.%s" % (self.tldextracted.domain, self.tldextracted.suffix)
+            value = "%s.%s" % (self.tldextracted[1], self.tldextracted[2])
 
         elif attr == "domain":
             value = self.parsed.netloc
 
         elif attr == "subdomain":
-            value = self.tldextracted.subdomain
+            value = self.tldextracted[0]
 
         elif attr == "normalized_domain":
             if self.domain.startswith("www."):
@@ -125,7 +137,7 @@ class URL(object):
         # https://en.wikipedia.org/wiki/Public_Suffix_List
         # Returns the domain name suffix ("co.uk" for "bbc.co.uk")
         elif attr == "suffix":
-            value = self.tldextracted.suffix
+            value = self.tldextracted[2]
 
         else:
             raise Exception("Unknown attribute %s !" % attr)

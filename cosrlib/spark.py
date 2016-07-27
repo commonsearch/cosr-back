@@ -4,6 +4,8 @@ import time
 
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext
+from pyspark.sql.dataframe import DataFrame
+from pyspark.rdd import RDD
 
 from cosrlib.config import config
 
@@ -30,6 +32,45 @@ def teardown_spark_worker(*a, **kw):
         cov.stop()
         cov.save()
         del __builtins__["_cosr_pyspark_coverage"]
+
+
+def createDataFrame(sqlc, data, schema, samplingRatio=None):
+    """ Our own version of spark.sql.session.createDataFrame which doesn't validate the schema.
+        See https://issues.apache.org/jira/browse/SPARK-16700
+    """
+    # pylint: disable=protected-access
+
+    # Spark 2.0.0+
+    if hasattr(sqlc, "sparkSession"):
+        self = sqlc.sparkSession
+
+        if isinstance(data, RDD):
+            rdd, schema = self._createFromRDD(data, schema, samplingRatio)
+        else:
+            rdd, schema = self._createFromLocal(data, schema)
+
+        jrdd = self._jvm.SerDeUtil.toJavaArray(rdd._to_java_object_rdd())
+        jdf = self._jsparkSession.applySchemaToPythonRDD(jrdd.rdd(), schema.json())
+        df = DataFrame(jdf, self._wrapped)
+        df._schema = schema
+        return df
+
+    else:
+        return sqlc.createDataFrame(data, schema, samplingRatio=samplingRatio)
+
+
+def sql(sqlc, query, tables=None):
+    """ Helper that runs a Spark SQL query with a list of temporary tables """
+
+    for key, df in (tables or {}).iteritems():
+        sqlc.registerDataFrameAsTable(df, key)
+
+    ret = sqlc.sql(query)
+
+    for key, df in (tables or {}).iteritems():
+        sqlc.dropTempTable(key)
+
+    return ret
 
 
 class SparkJob(object):
@@ -75,18 +116,32 @@ class SparkJob(object):
             ("spark.python.worker.reuse", "true" if config["ENV"] in ("ci", ) else "false"),
 
             ("spark.ui.enabled", "false" if config["ENV"] in ("ci", ) else "true"),
-            ("spark.task.maxFailures", "50"),
+            ("spark.task.maxFailures", "5"),
+
+            ("spark.sql.warehouse.dir", "/tmp/spark-warehouse"),
 
             # http://deploymentzone.com/2015/12/20/s3a-on-spark-on-aws-ec2/
+            # https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/index.html
             ("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem"),
             ("spark.hadoop.fs.s3a.access.key", os.getenv("AWS_ACCESS_KEY_ID", "")),
             ("spark.hadoop.fs.s3a.secret.key", os.getenv("AWS_SECRET_ACCESS_KEY", "")),
             ("spark.hadoop.fs.s3a.buffer.dir", "/tmp"),
-            # ("spark.hadoop.fs.s3a.fast.upload", "true"),
+            ("spark.hadoop.fs.s3a.connection.maximum", "100"),
+            # ("spark.hadoop.fs.s3a.fast.upload", "true"),  # Buffer directly from memory to S3
 
-            ("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-            # ("spark.hadoop.parquet.enable.summary-metadata", "false")
-            # "parquet.metadata.read.parallelism"
+            ("spark.sql.parquet.mergeSchema", "false"),
+            ("spark.sql.parquet.cacheMetadata", "true"),
+            ("spark.sql.parquet.compression.codec", "gzip"),  # snappy, lzo
+            ("spark.hadoop.parquet.enable.summary-metadata", "false"),
+            ("spark.hadoop.parquet.metadata.read.parallelism", "100"),
+            ("spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version", "2"),
+            ("spark.hadoop.mapreduce.fileoutputcommitter.marksuccessfuljobs", "true"),
+
+            ("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
+
+            ("spark.speculation", "false"),
+
+            # set("spark.akka.frameSize", "128")
         ))
 
         executor_environment = {
@@ -99,7 +154,14 @@ class SparkJob(object):
                 "LD_LIBRARY_PATH": "/usr/local/lib"
             })
 
-        sc = SparkContext(appName=self.name, conf=conf, environment=executor_environment)
+        from pyspark.serializers import MarshalSerializer
+
+        sc = SparkContext(
+            appName=self.name,
+            conf=conf,
+            environment=executor_environment,
+            serializer=MarshalSerializer()
+        )
 
         sqlc = SQLContext(sc)
 

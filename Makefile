@@ -93,7 +93,7 @@ docker_shell:
 
 # Logins into the same container again
 docker_reshell:
-	sh -c 'docker exec -t -i `docker ps | grep commonsearch/local-back | cut -f 1 -d " "` bash'
+	sh -c 'docker exec -t -i `docker ps | grep commonsearch/local-back | grep bash | cut -f 1 -d " "` bash'
 
 # Stops all docker containers on this machine
 docker_stop_all:
@@ -140,18 +140,19 @@ reindex_standard:
 
 	rm -rf ./out/
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --stop_delay 600 --source wikidata:maxdocs=10000,block=1 --source commoncrawl:limit=4,maxdocs=24000,block=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:path=/cosr/back/out/,coalesce=1
+	# spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --stop_delay 600 --source wikidata:maxdocs=10000,block=1 --source commoncrawl:limit=40,maxdocs=100,block=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.linkgraph.DomainToDomainParquet:path=/cosr/back/out/,coalesce=1
+	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --source commoncrawl:limit=200,maxdocs=100,block=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.linkgraph.DomainToDomainParquet:path=/cosr/back/out/
 
 pagerank_standard:
 	rm -rf ./out/pagerank/
-	SPARK_CONF_DIR=/cosr/back/spark/conf spark-submit --packages graphframes:graphframes:0.1.0-spark1.6 spark/jobs/pagerank.py --gzip --edges /cosr/back/out/edges/ --vertices /cosr/back/out/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 10
+	spark-submit spark/jobs/pagerank.py --gzip --edges /cosr/back/out/edges/ --vertices /cosr/back/out/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 10
 	@echo ""
 	@echo "Top 10 domains:"
 	zcat out/pagerank/part-00000.gz | head
 
 dump_standard:
 	rm -rf ./out/
-	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=4 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata,abort=1 --plugin plugins.linkgraph.DomainToDomainParquet
+	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=12,maxdocs=1000 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata,abort=1 --plugin plugins.linkgraph.DomainToDomainParquet
 
 viewdump_standard:
 	hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json ./out/metadata/

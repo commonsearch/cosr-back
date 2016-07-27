@@ -13,9 +13,7 @@ class DocumentMetadataParquet(Plugin):
         if self.args.get("path") and os.path.isdir(self.args["path"]):
             shutil.rmtree(self.args["path"])
 
-    def spark_pipeline_action(self, sc, sqlc, rdd, document_schema, indexer):
-
-        doc_df = sqlc.createDataFrame(rdd, document_schema)
+    def spark_pipeline_action(self, sc, sqlc, doc_df, indexer):
 
         if self.args.get("coalesce"):
             doc_df = doc_df.coalesce(int(self.args["coalesce"]))

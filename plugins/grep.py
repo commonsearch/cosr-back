@@ -30,13 +30,16 @@ class Words(Plugin):
             print "WORD MATCH", match, document.source_url.url
             metadata["grep_words"] = list(match)
 
-    def spark_pipeline_action(self, sc, sqlc, rdd, document_schema, indexer):
+    def spark_pipeline_action(self, sc, sqlc, df, indexer):
 
-        rdd = rdd \
-            .flatMap(lambda row: (
-                ["%s %s" % (",".join(sorted(row["grep_words"])), row["url"])]
-                if "grep_words" in row else []
-            ))
+        # TODO: we might be able to do that in pure Spark SQL
+        def fmt(row):
+            if not row or not row["grep_words"]:
+                return []
+            return ["%s %s" % (",".join(sorted(row["grep_words"])), row["url"])]
+
+        rdd = df.rdd \
+            .flatMap(fmt)
 
         if self.args.get("coalesce"):
             rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))

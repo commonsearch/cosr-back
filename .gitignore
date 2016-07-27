@@ -15,3 +15,5 @@ __pycache__
 /plugins/local_*
 /*.csv
 /out
+/pyspark
+/spark/tests

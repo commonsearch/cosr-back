@@ -38,6 +38,7 @@ RUN apt-get clean && apt-get update && apt-get upgrade -y && apt-get install -y 
     gcc \
     build-essential \
     make \
+    cmake \
     python \
     python-pip \
     python-dev \
@@ -118,19 +119,28 @@ RUN wget https://codeload.github.com/google/protobuf/tar.gz/v${PROTOBUF_VERSION}
 # Install Spark
 #
 
-ENV SPARK_VERSION 1.6.2
-ENV SPARK_HADOOP_VERSION 2.6
-ENV SPARK_PACKAGE spark-$SPARK_VERSION-bin-hadoop$SPARK_HADOOP_VERSION
-ENV SPARK_HOME /usr/$SPARK_PACKAGE
+ENV SPARK_VERSION 2.0.0
+ENV SPARK_HOME /usr/spark
 ENV PATH $PATH:$SPARK_HOME/bin
 ENV SPARK_CONF_DIR /cosr/back/spark/conf
 
-# Despite the cryptic URL, this is Apache's official repository
-RUN curl -sL --retry 3 \
-  "http://d3kbcqa49mib13.cloudfront.net/$SPARK_PACKAGE.tgz" \
-  | gunzip \
-  | tar x -C /usr/ \
-  && ln -s $SPARK_HOME /usr/spark
+# Spark 2.0.0-rc5
+RUN curl -sL --retry 3 "http://people.apache.org/~pwendell/spark-releases/spark-2.0.0-rc5-bin/spark-2.0.0-bin-without-hadoop.tgz" \
+  | tar xz -C /usr/ \
+  && ls -la /usr/ \
+  && ln -s /usr/spark-$SPARK_VERSION-bin-without-hadoop $SPARK_HOME
+
+
+#
+# Overwrite our own snapshot version of Spark
+# Adds a fix for https://issues.apache.org/jira/browse/SPARK-16740
+#
+RUN rm -rf /usr/spark/jars && \
+  curl -sL --retry 2 https://s3.amazonaws.com/packages.commonsearch.org/spark/spark-2.0.0-SNAPSHOT.bz2 \
+  | tar jx -C /usr/ && \
+  mv /usr/spark-jars /usr/spark/jars
+
+
 
 # Oracle JDK is recommended in some places versus Open JDK so it may be interesting to
 # benchmark them or try Oracle JDK to single-out bugs in Open JDK. However it is closed-source
@@ -159,11 +169,13 @@ RUN cd /usr/ && ln -s ./hadoop-$HADOOP_VERSION hadoop
 
 #
 # Spark packages
-# TODO: programmatically download dependencies from spark-defaults.conf
 #
 
-RUN mkdir -p /usr/spark/packages/jars
-RUN wget 'https://repo1.maven.org/maven2/org/apache/parquet/parquet-tools/1.8.1/parquet-tools-1.8.1.jar' -P /usr/spark/packages/jars
+RUN wget 'https://repo1.maven.org/maven2/org/apache/parquet/parquet-tools/1.8.1/parquet-tools-1.8.1.jar' -P /usr/lib/
+
+# Download the current dependencies so we don't have to do it at first run
+ADD spark/conf/spark-defaults.conf /tmp/spark.conf
+RUN SPARK_DIST_CLASSPATH=$(hadoop classpath) spark-submit --properties-file /tmp/spark.conf /usr/spark/examples/src/main/python/pi.py && rm /tmp/spark.conf
 
 
 #
@@ -176,6 +188,25 @@ RUN curl -sL 'https://bitbucket.org/squeaky/portable-pypy/downloads/pypy-5.3.1-l
 
 
 #
+# Python modules not on PyPI
+#
+
+# FAUP
+RUN cd /tmp && \
+    git clone https://github.com/stricaud/faup.git && \
+    cd faup && \
+    git checkout 07f9550fb288a94efccdaeeae66c34aafa91aded && \
+    cd build && \
+    cmake .. && make && \
+    make install && \
+    cd ../src/lib/bindings/python && \
+    python setup.py install && \
+    cd / && rm -rf /tmp/faup
+
+
+
+
+#
 # Python setup
 #
 
@@ -185,7 +216,6 @@ ADD requirements.txt /requirements.txt
 RUN pip install --upgrade --ignore-installed pip
 
 RUN pip install -r /requirements.txt
-
 
 
 #

@@ -24,6 +24,11 @@ def _validate_txt_graph(linkgraph_dir):
     assert ["example-c.com", "example-b.com"] in graph
 
 
+def _read_parquet(parquet_path):
+    out = subprocess.check_output("hadoop jar /usr/lib/parquet-tools-1.8.1.jar cat --json %s 2>/dev/null" % parquet_path, shell=True)
+    return [json.loads(line) for line in out.strip().split("\n")]
+
+
 @pytest.mark.elasticsearch
 def test_spark_link_graph_txt(indexer, sparksubmit):
 
@@ -62,7 +67,7 @@ def test_spark_link_graph_txt_with_intermediate_dump(sparksubmit):
 
         print "Intermediate file dump:"
 
-        os.system("hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json %s/intermediate/ 2>/dev/null" % linkgraph_dir)
+        print _read_parquet("%s/intermediate/" % linkgraph_dir)
 
         # Resume pipeline from that dump
         sparksubmit("spark/jobs/index.py --source parquet:path=%s/intermediate/ --plugin plugins.linkgraph.DomainToDomain:coalesce=1,path=%s/out/ --plugin plugins.filter.All:parse=1,index=0" % (
@@ -95,26 +100,18 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
 
         # Then read the generated Parquet files with another library to ensure compatibility
         # TODO: replace this with a JSON dump from a Python binding when available
-        out = subprocess.check_output("hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json %s/out/edges/ 2>/dev/null" % linkgraph_dir, shell=True)
-
-        print repr(out)
-
-        lines = [json.loads(line) for line in out.strip().split("\n")]
+        lines = _read_parquet("%s/out/edges/" % linkgraph_dir)
 
         for src, dst in [
             (domain_a_id, domain_b_id),
             (domain_b_id, domain_c_id),
             (domain_c_id, domain_b_id)
         ]:
-            assert {"src": src, "dst": dst} in lines
+            assert {"src": src, "dst": dst, "weight": 1.0} in lines
 
         assert len(lines) == 3
 
-        out = subprocess.check_output("hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json %s/out/vertices/ 2>/dev/null" % linkgraph_dir, shell=True)
-
-        print repr(out)
-
-        lines = [json.loads(line) for line in out.strip().split("\n")]
+        lines = _read_parquet("%s/out/vertices/" % linkgraph_dir)
 
         assert {"id": domain_a_id, "domain": "example-a.com"} in lines
         assert {"id": domain_b_id, "domain": "example-b.com"} in lines
@@ -124,14 +121,16 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
         assert len(lines) == 4
 
         # Now compute page rank on the domain graph!
-        sparksubmit("spark/jobs/pagerank.py --edges %s/out/edges/ --vertices %s/out/vertices/ --maxiter 10 --dump %s/out/pagerank/" % (
+        sparksubmit("spark/jobs/pagerank.py --edges %s/out/edges/ --vertices %s/out/vertices/ --maxiter 5 --shuffle_partitions 2 --dump %s/out/pagerank/" % (
             linkgraph_dir,
             linkgraph_dir,
             linkgraph_dir
-        ), packages=["graphframes"])
+        ))
 
         # We collect(1) so there should be only one partition
-        pr_file = linkgraph_dir + "/out/pagerank/part-00000"
+        txtfiles = [x for x in os.listdir(linkgraph_dir + "/out/pagerank/") if x.endswith(".txt")]
+        assert len(txtfiles) == 1
+        pr_file = linkgraph_dir + "/out/pagerank/" + txtfiles[0]
         assert os.path.isfile(pr_file)
 
         with open(pr_file, "r") as f:

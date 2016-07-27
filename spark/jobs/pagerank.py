@@ -8,9 +8,7 @@ if os.environ.get("COSR_PATH_BACK"):
 elif os.path.isdir("/cosr/back"):
     sys.path.insert(-1, "/cosr/back")
 
-from graphframes import GraphFrame  # pylint: disable=import-error
-
-from cosrlib.spark import SparkJob
+from cosrlib.spark import SparkJob, sql
 
 
 class PageRankJob(SparkJob):
@@ -29,13 +27,84 @@ class PageRankJob(SparkJob):
         parser.add_argument("--maxiter", default=5, type=int,
                             help="Maximum iterations for the PageRank algorithm")
 
+        parser.add_argument("--maxedges", default=0, type=int,
+                            help="Maximum number of edges to consider")
+
+        parser.add_argument("--maxvertices", default=0, type=int,
+                            help="Maximum number of vertices to consider")
+
         parser.add_argument("--dump", default=None, type=str,
                             help="Directory for storing list of pageranks by domain")
+
+        parser.add_argument("--shuffle_partitions", default=10, type=int,
+                            help="Number of shuffle partitions to use in the Spark pipeline")
 
         parser.add_argument("--gzip", default=False, action="store_true",
                             help="Save dump as gzip")
 
     def run_job(self, sc, sqlc):
+
+        self.custom_pagerank(sc, sqlc)
+
+    def custom_pagerank(self, sc, sqlc):
+        """ Our own PageRank implementation """
+
+        edge_df = sqlc.read.load(self.args.edges)
+
+        if self.args.maxedges:
+            edge_df = edge_df.limit(self.args.maxedges)
+
+        vertex_df = sqlc.read.load(self.args.vertices)
+
+        if self.args.maxvertices:
+            vertex_df = vertex_df.limit(self.args.maxvertices)
+
+        sqlc.setConf("spark.sql.shuffle.partitions", str(self.args.shuffle_partitions))
+
+        # TODO: bootstrap with previous pageranks to accelerate convergence?
+        ranks_df = sql(sqlc, """
+            SELECT id, cast(1.0 as float) rank
+            FROM vertices
+        """, {"vertices": vertex_df})
+
+        for _ in range(self.args.maxiter):
+
+            contribs_df = sql(sqlc, """
+                SELECT edges.dst id, cast(sum(ranks.rank * COALESCE(edges.weight, 0)) as float) contrib
+                FROM edges
+                LEFT OUTER JOIN ranks ON edges.src = ranks.id
+                GROUP BY edges.dst
+            """, {"edges": edge_df, "ranks": ranks_df})
+
+            ranks_df = sql(sqlc, """
+                SELECT ranks.id id, cast(0.15 + 0.85 * COALESCE(contribs.contrib, 0) as float) rank
+                FROM ranks
+                LEFT OUTER JOIN contribs ON contribs.id = ranks.id
+            """, {"ranks": ranks_df, "contribs": contribs_df})
+
+            ranks_df.persist()
+
+        final_df = sql(sqlc, """
+            SELECT CONCAT(names.domain, ' ', ranks.rank) r
+            FROM ranks
+            JOIN names ON names.id = ranks.id
+            ORDER BY ranks.rank DESC
+        """, {"names": vertex_df, "ranks": ranks_df})
+
+        if self.args.dump:
+
+            final_df.repartition(1).write.text(
+                self.args.dump,
+                compression="gzip" if self.args.gzip else "none"
+            )
+
+        else:
+            print final_df.rdd.collect()
+
+    def graphframes_pagerank(self, sc, sqlc):
+        """ Use GraphFrame's PageRank implementation """
+
+        from graphframes import GraphFrame  # pylint: disable=import-error
 
         edge_df = sqlc.read.load(self.args.edges)
         vertex_df = sqlc.read.load(self.args.vertices)
