@@ -22,3 +22,5 @@ class DocumentMetadataParquet(Plugin):
 
         if self.args.get("abort"):
             return PLUGIN_HOOK_ABORT
+
+        return True

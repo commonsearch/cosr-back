@@ -60,7 +60,7 @@ def _fast_make_domain_id(domain):
         if subdomain == "www" or not subdomain:
             URL_DOMAIN_IDS_CACHE[domain] = mmh3.hash("%s.%s" % (domain, suffix))
         else:
-            if subdomain.startswith("www."):
+            while subdomain.startswith("www."):
                 subdomain = subdomain[4:]
 
             URL_DOMAIN_IDS_CACHE[domain] = (

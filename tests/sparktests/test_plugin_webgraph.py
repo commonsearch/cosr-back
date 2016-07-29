@@ -8,13 +8,13 @@ import ujson as json
 import subprocess
 
 
-def _validate_txt_graph(linkgraph_dir):
+def _validate_txt_graph(webgraph_dir):
 
     # We collect(1) so there should be only one partition
-    linkgraph_file = linkgraph_dir + "/out/part-00000"
-    assert os.path.isfile(linkgraph_file)
+    webgraph_file = webgraph_dir + "/out/part-00000"
+    assert os.path.isfile(webgraph_file)
 
-    with open(linkgraph_file, "r") as f:
+    with open(webgraph_file, "r") as f:
         graph = [x.split(" ") for x in f.read().strip().split("\n")]
 
     print graph
@@ -32,19 +32,19 @@ def _read_parquet(parquet_path):
 @pytest.mark.elasticsearch
 def test_spark_link_graph_txt(indexer, sparksubmit):
 
-    linkgraph_dir = tempfile.mkdtemp()
+    webgraph_dir = tempfile.mkdtemp()
 
     try:
 
-        sparksubmit("spark/jobs/index.py  --source wikidata --source corpus:%s  --plugin plugins.linkgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/index.py  --source wikidata --source corpus:%s  --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
-            linkgraph_dir
+            webgraph_dir
         ))
 
-        _validate_txt_graph(linkgraph_dir)
+        _validate_txt_graph(webgraph_dir)
 
     finally:
-        shutil.rmtree(linkgraph_dir)
+        shutil.rmtree(webgraph_dir)
 
 
 def test_spark_link_graph_txt_with_intermediate_dump(sparksubmit):
@@ -52,39 +52,39 @@ def test_spark_link_graph_txt_with_intermediate_dump(sparksubmit):
          + having no dependency on elasticsearch when not actually indexing
     """
 
-    linkgraph_dir = tempfile.mkdtemp()
+    webgraph_dir = tempfile.mkdtemp()
 
     try:
 
         # Generate temporary dump
-        sparksubmit("spark/jobs/index.py --source corpus:%s --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=%s/intermediate/,abort=1 --plugin plugins.linkgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/index.py --source corpus:%s --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=%s/intermediate/,abort=1 --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
-            linkgraph_dir,
-            linkgraph_dir
+            webgraph_dir,
+            webgraph_dir
         ))
 
-        assert not os.path.isdir("%s/out/" % linkgraph_dir)
+        assert not os.path.isdir("%s/out/" % webgraph_dir)
 
         print "Intermediate file dump:"
 
-        print _read_parquet("%s/intermediate/" % linkgraph_dir)
+        print _read_parquet("%s/intermediate/" % webgraph_dir)
 
         # Resume pipeline from that dump
-        sparksubmit("spark/jobs/index.py --source parquet:path=%s/intermediate/ --plugin plugins.linkgraph.DomainToDomain:coalesce=1,path=%s/out/ --plugin plugins.filter.All:parse=1,index=0" % (
-            linkgraph_dir,
-            linkgraph_dir
+        sparksubmit("spark/jobs/index.py --source parquet:path=%s/intermediate/ --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/ --plugin plugins.filter.All:parse=1,index=0" % (
+            webgraph_dir,
+            webgraph_dir
         ))
 
-        _validate_txt_graph(linkgraph_dir)
+        _validate_txt_graph(webgraph_dir)
 
     finally:
-        shutil.rmtree(linkgraph_dir)
+        shutil.rmtree(webgraph_dir)
 
 
 @pytest.mark.elasticsearch
 def test_spark_link_graph_parquet(indexer, sparksubmit):
 
-    linkgraph_dir = tempfile.mkdtemp()
+    webgraph_dir = tempfile.mkdtemp()
 
     try:
 
@@ -93,14 +93,14 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
         domain_c_id = indexer.client.urlclient.get_domain_id("http://example-c.com/")
         domain_d_id = indexer.client.urlclient.get_domain_id("http://example-d.com/")
 
-        sparksubmit("spark/jobs/index.py --source corpus:%s  --plugin plugins.linkgraph.DomainToDomainParquet:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/index.py --source corpus:%s  --plugin plugins.webgraph.DomainToDomainParquet:coalesce=1,path=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
-            linkgraph_dir
+            webgraph_dir
         ))
 
         # Then read the generated Parquet files with another library to ensure compatibility
         # TODO: replace this with a JSON dump from a Python binding when available
-        lines = _read_parquet("%s/out/edges/" % linkgraph_dir)
+        lines = _read_parquet("%s/out/edges/" % webgraph_dir)
 
         for src, dst in [
             (domain_a_id, domain_b_id),
@@ -111,7 +111,7 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
 
         assert len(lines) == 3
 
-        lines = _read_parquet("%s/out/vertices/" % linkgraph_dir)
+        lines = _read_parquet("%s/out/vertices/" % webgraph_dir)
 
         assert {"id": domain_a_id, "domain": "example-a.com"} in lines
         assert {"id": domain_b_id, "domain": "example-b.com"} in lines
@@ -122,15 +122,15 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
 
         # Now compute page rank on the domain graph!
         sparksubmit("spark/jobs/pagerank.py --edges %s/out/edges/ --vertices %s/out/vertices/ --maxiter 5 --shuffle_partitions 2 --dump %s/out/pagerank/" % (
-            linkgraph_dir,
-            linkgraph_dir,
-            linkgraph_dir
+            webgraph_dir,
+            webgraph_dir,
+            webgraph_dir
         ))
 
         # We collect(1) so there should be only one partition
-        txtfiles = [x for x in os.listdir(linkgraph_dir + "/out/pagerank/") if x.endswith(".txt")]
+        txtfiles = [x for x in os.listdir(webgraph_dir + "/out/pagerank/") if x.endswith(".txt")]
         assert len(txtfiles) == 1
-        pr_file = linkgraph_dir + "/out/pagerank/" + txtfiles[0]
+        pr_file = webgraph_dir + "/out/pagerank/" + txtfiles[0]
         assert os.path.isfile(pr_file)
 
         with open(pr_file, "r") as f:
@@ -141,4 +141,4 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
         assert pr[0][1] > 1
 
     finally:
-        shutil.rmtree(linkgraph_dir)
+        shutil.rmtree(webgraph_dir)

@@ -2,6 +2,7 @@
 import urllib
 # import tldextract as _tldextract
 import urlparse4 as urlparse
+
 from pyfaup.faup import Faup
 
 
@@ -10,7 +11,7 @@ def tld_extract(domain):
     if "_faup" not in __builtins__:
         __builtins__["_faup"] = Faup()
     _faup = __builtins__["_faup"]
-    _faup.decode(domain.decode("utf-8"))
+    _faup.decode(domain.decode("utf-8").strip("."))
     return (_faup.get_subdomain() or "", _faup.get_domain_without_tld() or "", _faup.get_tld() or "")
 
 # TODO init lazily
@@ -112,22 +113,28 @@ class URL(object):
             value = self.tldextracted[0]
 
         elif attr == "normalized_domain":
-            if self.domain.startswith("www."):
-                value = self.domain[4:]
-            else:
-                value = self.domain
+
+            value = self.domain.strip(".")
+
+            while value.startswith("www."):
+                value = value[4:]
+
             if value.endswith(':80'):
                 value = value[:-3]
             elif value.endswith(':443'):
                 value = value[:-4]
 
+            value = value.strip(".")
+
         elif attr == "normalized_subdomain":
-            if self.subdomain == "www":
+
+            value = self.subdomain.strip(".")
+
+            if value == "www":
                 value = ""
-            elif self.subdomain.startswith("www."):
-                value = self.subdomain[4:]
             else:
-                value = self.subdomain
+                while value.startswith("www."):
+                    value = value[4:]
 
         elif attr == "normalized_path":
             if self.parsed.path == "/":

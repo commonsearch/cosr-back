@@ -1,5 +1,9 @@
 import os
 import sys
+import shutil
+import urlparse
+
+import boto
 
 # Add the base cosr-back directory to the Python import path
 # pylint: disable=wrong-import-position
@@ -9,6 +13,7 @@ elif os.path.isdir("/cosr/back"):
     sys.path.insert(-1, "/cosr/back")
 
 from cosrlib.spark import SparkJob, sql
+# from pyspark.sql import types as SparkTypes
 
 
 class PageRankJob(SparkJob):
@@ -42,12 +47,54 @@ class PageRankJob(SparkJob):
         parser.add_argument("--gzip", default=False, action="store_true",
                             help="Save dump as gzip")
 
+        parser.add_argument("--tmpdir", default="/tmp/cosr_spark_pagerank", type=str,
+                            help="Temporary directory for storing iterations of the graph.")
+
     def run_job(self, sc, sqlc):
 
-        self.custom_pagerank(sc, sqlc)
+        self.clean_tmpdir()
+
+        try:
+
+            self.custom_pagerank(sc, sqlc)
+            # self.graphframes_pagerank(sc, sqlc)
+        finally:
+            self.clean_tmpdir()
+
+    def clean_tmpdir(self, directory=None):
+        """ Delete a folder with temporary results. If no folder passed, delete the whole tmpdir path """
+
+        tmpdir = directory or self.args.tmpdir
+
+        if not tmpdir:
+            print "No tmpdir configured! Will probably run out of memory."
+            return
+
+        # Local filepath
+        if tmpdir.startswith("/") and os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
+
+        # S3
+        elif tmpdir.startswith("s3a://"):
+            parsed = urlparse.urlparse(tmpdir)
+            conn = boto.connect_s3(os.getenv("AWS_ACCESS_KEY_ID"), os.getenv("AWS_SECRET_ACCESS_KEY"))
+            bucket = conn.get_bucket(parsed.netloc)
+            path = parsed.path or "/cosr_spark_pagerank"
+            delete_key_list = list(bucket.list(prefix=path))
+            if len(delete_key_list) > 0:
+                bucket.delete_keys(delete_key_list)
+
+        # TODO: HDFS
 
     def custom_pagerank(self, sc, sqlc):
         """ Our own PageRank implementation """
+
+        sc.setCheckpointDir("/tmp/spark-checkpoints")
+
+        # ranks_schema = SparkTypes.StructType([
+        #     SparkTypes.StructField("id", SparkTypes.LongType(), nullable=False),
+        #     SparkTypes.StructField("rank", SparkTypes.FloatType(), nullable=False)
+        # ])
 
         edge_df = sqlc.read.load(self.args.edges)
 
@@ -67,22 +114,39 @@ class PageRankJob(SparkJob):
             FROM vertices
         """, {"vertices": vertex_df})
 
-        for _ in range(self.args.maxiter):
+        edge_df.persist()
+        print "Starting iterations. Number of edges: %s" % edge_df.count()
 
-            contribs_df = sql(sqlc, """
-                SELECT edges.dst id, cast(sum(ranks.rank * COALESCE(edges.weight, 0)) as float) contrib
-                FROM edges
-                LEFT OUTER JOIN ranks ON edges.src = ranks.id
-                GROUP BY edges.dst
-            """, {"edges": edge_df, "ranks": ranks_df})
+        iteration_tmpdir = None
 
-            ranks_df = sql(sqlc, """
+        for iteration in range(self.args.maxiter):
+
+            new_ranks_df = sql(sqlc, """
                 SELECT ranks.id id, cast(0.15 + 0.85 * COALESCE(contribs.contrib, 0) as float) rank
                 FROM ranks
-                LEFT OUTER JOIN contribs ON contribs.id = ranks.id
-            """, {"ranks": ranks_df, "contribs": contribs_df})
+                LEFT OUTER JOIN (
+                    SELECT edges.dst id, cast(sum(ranks.rank * COALESCE(edges.weight, 0)) as float) contrib
+                    FROM edges
+                    LEFT OUTER JOIN ranks ON edges.src = ranks.id
+                    GROUP BY edges.dst
+                ) contribs ON contribs.id = ranks.id
+            """, {"ranks": ranks_df, "edges": edge_df})
 
-            ranks_df.persist()
+            # At this point we need to break the RDD dependency chain
+            # Writing & loading Parquet seems to be more efficient than checkpointing the RDD.
+
+            iteration_tmpdir_previous = iteration_tmpdir
+            iteration_tmpdir = os.path.join(self.args.tmpdir, "iter_%s" % iteration)
+
+            # S3 in us-east-1 supports read-after-write consistency since 2015
+            new_ranks_df.write.parquet(iteration_tmpdir)
+            ranks_df = sqlc.read.load(iteration_tmpdir)
+
+            if iteration_tmpdir_previous is not None:
+                self.clean_tmpdir(directory=iteration_tmpdir_previous)
+
+        # No more need for the edges after iterations
+        edge_df.unpersist()
 
         final_df = sql(sqlc, """
             SELECT CONCAT(names.domain, ' ', ranks.rank) r
@@ -93,7 +157,7 @@ class PageRankJob(SparkJob):
 
         if self.args.dump:
 
-            final_df.repartition(1).write.text(
+            final_df.coalesce(1).write.text(
                 self.args.dump,
                 compression="gzip" if self.args.gzip else "none"
             )
@@ -112,20 +176,22 @@ class PageRankJob(SparkJob):
         graph = GraphFrame(vertex_df, edge_df)
 
         withPageRank = graph.pageRank(maxIter=self.args.maxiter)
-        rdd = withPageRank.vertices.sort(withPageRank.vertices.pagerank.desc()).map(
-            lambda x: "%s %s" % (x.domain, x.pagerank)
-        ).coalesce(1)
+
+        final_df = sql(sqlc, """
+            SELECT CONCAT(ranks.domain, ' ', ranks.pagerank) r
+            FROM ranks
+            ORDER BY ranks.pagerank DESC
+        """, {"ranks": withPageRank.vertices})
 
         if self.args.dump:
 
-            codec = None
-            if self.args.gzip:
-                codec = "org.apache.hadoop.io.compress.GzipCodec"
-
-            rdd.saveAsTextFile(self.args.dump, codec)
+            final_df.coalesce(1).write.text(
+                self.args.dump,
+                compression="gzip" if self.args.gzip else "none"
+            )
 
         else:
-            print rdd.collect()
+            print final_df.rdd.collect()
 
 if __name__ == "__main__":
     job = PageRankJob()

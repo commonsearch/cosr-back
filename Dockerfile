@@ -119,27 +119,23 @@ RUN wget https://codeload.github.com/google/protobuf/tar.gz/v${PROTOBUF_VERSION}
 # Install Spark
 #
 
-ENV SPARK_VERSION 2.0.0
+# https://people.apache.org/~pwendell/spark-nightly/spark-master-bin/spark-2.1.0-SNAPSHOT-2016_07_28_01_03-5c2ae79-bin/
+ENV SPARK_VERSION 2.1.0-SNAPSHOT
 ENV SPARK_HOME /usr/spark
 ENV PATH $PATH:$SPARK_HOME/bin
 ENV SPARK_CONF_DIR /cosr/back/spark/conf
 
-# Spark 2.0.0-rc5
-RUN curl -sL --retry 3 "http://people.apache.org/~pwendell/spark-releases/spark-2.0.0-rc5-bin/spark-2.0.0-bin-without-hadoop.tgz" \
+# http://d3kbcqa49mib13.cloudfront.net/spark-$SPARK_VERSION-bin-without-hadoop.tgz
+RUN curl -sL --retry 3 "https://s3.amazonaws.com/packages.commonsearch.org/spark/spark-2.1.0-SNAPSHOT-bin-without-hadoop.tgz" \
   | tar xz -C /usr/ \
   && ls -la /usr/ \
   && ln -s /usr/spark-$SPARK_VERSION-bin-without-hadoop $SPARK_HOME
 
-
 #
-# Overwrite our own snapshot version of Spark
+# Overwrite our own snapshot version of Spark SQL
 # Adds a fix for https://issues.apache.org/jira/browse/SPARK-16740
 #
-RUN rm -rf /usr/spark/jars && \
-  curl -sL --retry 2 https://s3.amazonaws.com/packages.commonsearch.org/spark/spark-2.0.0-SNAPSHOT.bz2 \
-  | tar jx -C /usr/ && \
-  mv /usr/spark-jars /usr/spark/jars
-
+RUN curl -sL "https://s3.amazonaws.com/packages.commonsearch.org/spark/spark-sql_2.11-2.1.0-SNAPSHOT.jar" -o /usr/spark/jars/spark-sql_2.11-2.1.0-SNAPSHOT.jar
 
 
 # Oracle JDK is recommended in some places versus Open JDK so it may be interesting to

@@ -67,9 +67,6 @@ def sql(sqlc, query, tables=None):
 
     ret = sqlc.sql(query)
 
-    for key, df in (tables or {}).iteritems():
-        sqlc.dropTempTable(key)
-
     return ret
 
 
@@ -127,6 +124,7 @@ class SparkJob(object):
             ("spark.hadoop.fs.s3a.secret.key", os.getenv("AWS_SECRET_ACCESS_KEY", "")),
             ("spark.hadoop.fs.s3a.buffer.dir", "/tmp"),
             ("spark.hadoop.fs.s3a.connection.maximum", "100"),
+            ("spark.hadoop.fs.s3a.endpoint", "s3-external-1.amazonaws.com"),  # us-east-1
             # ("spark.hadoop.fs.s3a.fast.upload", "true"),  # Buffer directly from memory to S3
 
             ("spark.sql.parquet.mergeSchema", "false"),

@@ -12,9 +12,9 @@ from urlserver.id_generator import _fast_make_domain_id
 class DomainToDomain(Plugin):
     """ Saves a graph of domain=>domain links in text format """
 
-    hooks = frozenset(["document_post_index", "spark_pipeline_action", "document_schema"])
+    hooks = frozenset(["document_post_index", "spark_pipeline_action", "spark_pipeline_init"])
 
-    def document_schema(self, schema):
+    def spark_pipeline_init(self, sc, sqlc, schema, indexer):
         schema.append(SparkTypes.StructField("external_links", SparkTypes.ArrayType(SparkTypes.StructType([
             SparkTypes.StructField("href", SparkTypes.StringType(), nullable=False)
             # TODO: link text
@@ -67,6 +67,8 @@ class DomainToDomainParquet(DomainToDomain):
         self.save_vertex_graph(sqlc, df)
         self.save_edge_graph(sqlc, df)
 
+        return True
+
     def save_vertex_graph(self, sqlc, df):
         """ Transforms a document metadata DataFrame into a Parquet dump of the vertices of the webgraph """
 
@@ -99,17 +101,28 @@ class DomainToDomainParquet(DomainToDomain):
             domain = record["domain"]
             if not domain or not domain.strip():
                 return []
-            _id = _fast_make_domain_id(domain)
+
             name = URL("http://" + domain).normalized_domain
 
-            return [(_id, name)]
+            try:
+                _id = _fast_make_domain_id(name)
+            except Exception:  # pylint: disable=broad-except
+                return []
+
+            if name.startswith(".") or name.startswith("www."):
+                print "HEYO %s %s %s" % (repr(name), repr(domain), repr(record))
+                raise Exception("HEYO %s %s %s" % (repr(name), repr(domain), repr(record)))
+
+            return [(long(_id), str(name))]
 
         rdd_domains = all_domains_df.rdd.flatMap(iter_domain)
 
         vertex_df = createDataFrame(sqlc, rdd_domains, vertex_graph_schema).distinct()
 
-        if self.args.get("coalesce_edges") or self.args.get("coalesce"):
-            vertex_df = vertex_df.coalesce(int(self.args.get("coalesce_edges") or self.args.get("coalesce")))
+        if self.args.get("coalesce_vertices") or self.args.get("coalesce"):
+            vertex_df = vertex_df.coalesce(
+                int(self.args.get("coalesce_vertices") or self.args.get("coalesce"))
+            )
 
         vertex_df.write.parquet(os.path.join(self.args["path"], "vertices"))
 
@@ -145,20 +158,20 @@ class DomainToDomainParquet(DomainToDomain):
             if not d1 or not d2:
                 return []
 
-            from_domain = _fast_make_domain_id(d1)
-            to_domain = _fast_make_domain_id(d2)
+            try:
+                from_domain = _fast_make_domain_id(d1)
+                to_domain = _fast_make_domain_id(d2)
+            except Exception:  # pylint: disable=broad-except
+                return []
 
             if from_domain == to_domain:
                 return []
             else:
-                return [(from_domain, to_domain)]
+                return [(long(from_domain), long(to_domain))]
 
         rdd_couples = new_df.rdd.flatMap(iter_links_domain)
 
         edge_df = createDataFrame(sqlc, rdd_couples, edge_graph_schema).distinct()
-
-        if self.args.get("coalesce_vertices") or self.args.get("coalesce"):
-            edge_df = edge_df.coalesce(int(self.args.get("coalesce_vertices") or self.args.get("coalesce")))
 
         # After collecting all the unique (from_id, to_id) pairs, we add the weight of every edge
         # The current algorithm is naive: edge weight is equally split between all the links, with
@@ -174,5 +187,10 @@ class DomainToDomainParquet(DomainToDomain):
             FROM edges
             JOIN weights on edges.src = weights.id
         """, {"edges": edge_df, "weights": weights_df})
+
+        if self.args.get("coalesce_edges") or self.args.get("coalesce"):
+            weighted_edge_df = weighted_edge_df.coalesce(
+                int(self.args.get("coalesce_edges") or self.args.get("coalesce"))
+            )
 
         weighted_edge_df.write.parquet(os.path.join(self.args["path"], "edges"))

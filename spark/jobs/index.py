@@ -57,6 +57,10 @@ class IndexJob(SparkJob):
         ]
 
         # Some plugins need to add new fields to the schema
+        exec_hook(
+            self.plugins, "spark_pipeline_init", sc, sqlc, document_schema_columns, indexer
+        )
+
         exec_hook(self.plugins, "document_schema", document_schema_columns)
 
         document_schema = SparkTypes.StructType(document_schema_columns)
@@ -181,13 +185,12 @@ class IndexJob(SparkJob):
             else:
                 all_documents = all_documents.unionAll(source_documents)
 
-        actions = exec_hook(
+        done_actions = exec_hook(
             self.plugins, "spark_pipeline_action", sc, sqlc, all_documents, indexer
         )
 
         # If no action was done, we need to do a count() to actually execute the spark pipeline
-        # TODO: is there a better way to check that?
-        if len(actions) > 0:
+        if any(done_actions):
             executed_pipeline = True
 
         if not executed_pipeline:
