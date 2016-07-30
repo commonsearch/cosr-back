@@ -120,6 +120,9 @@ def sparksubmit(request):
         for p in (packages or []):
             cmd_packages += "--packages %s" % package_dir[p]
 
-        os.system("COSR_ENV=ci COSR_TESTDATA=1 spark-submit --properties-file %s/spark/conf/spark-ci.conf %s %s" % (os.getcwd(), cmd_packages, cmd, ))
+        full_cmd = "COSR_ENV=ci COSR_TESTDATA=1 spark-submit --properties-file %s/spark/conf/spark-ci.conf %s %s" % (
+            os.getcwd(), cmd_packages, cmd
+        )
+        os.system(full_cmd)
 
     return _sparksubmit

@@ -113,7 +113,12 @@ class SparkJob(object):
             ("spark.python.worker.reuse", "true" if config["ENV"] in ("ci", ) else "false"),
 
             ("spark.ui.enabled", "false" if config["ENV"] in ("ci", ) else "true"),
-            ("spark.task.maxFailures", "5"),
+
+            ("spark.task.maxFailures", "10"),
+            ("spark.locality.wait", "10s"),
+            ("spark.locality.wait.node", "10s"),
+            ("spark.locality.wait.process", "10s"),
+            ("spark.locality.wait.rack", "10s"),
 
             ("spark.sql.warehouse.dir", "/tmp/spark-warehouse"),
 

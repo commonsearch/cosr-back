@@ -36,7 +36,7 @@ def test_spark_link_graph_txt(indexer, sparksubmit):
 
     try:
 
-        sparksubmit("spark/jobs/index.py  --source wikidata --source corpus:%s  --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/index.py  --plugin plugins.filter.All:parse=1,index=0  --source wikidata --source corpus:%s  --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             webgraph_dir
         ))
@@ -93,7 +93,7 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
         domain_c_id = indexer.client.urlclient.get_domain_id("http://example-c.com/")
         domain_d_id = indexer.client.urlclient.get_domain_id("http://example-d.com/")
 
-        sparksubmit("spark/jobs/index.py --source corpus:%s  --plugin plugins.webgraph.DomainToDomainParquet:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/index.py  --plugin plugins.filter.All:parse=1,index=0 --source corpus:%s  --plugin plugins.webgraph.DomainToDomainParquet:coalesce=1,path=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             webgraph_dir
         ))
@@ -119,26 +119,6 @@ def test_spark_link_graph_parquet(indexer, sparksubmit):
         assert {"id": domain_d_id, "domain": "example-d.com"} in lines
 
         assert len(lines) == 4
-
-        # Now compute page rank on the domain graph!
-        sparksubmit("spark/jobs/pagerank.py --edges %s/out/edges/ --vertices %s/out/vertices/ --maxiter 5 --shuffle_partitions 2 --dump %s/out/pagerank/" % (
-            webgraph_dir,
-            webgraph_dir,
-            webgraph_dir
-        ))
-
-        # We collect(1) so there should be only one partition
-        txtfiles = [x for x in os.listdir(webgraph_dir + "/out/pagerank/") if x.endswith(".txt")]
-        assert len(txtfiles) == 1
-        pr_file = webgraph_dir + "/out/pagerank/" + txtfiles[0]
-        assert os.path.isfile(pr_file)
-
-        with open(pr_file, "r") as f:
-            pr = [x.split(" ") for x in f.read().strip().split("\n")]
-
-        assert len(pr) == 4
-        assert pr[0][0] == "example-b.com"
-        assert pr[0][1] > 1
 
     finally:
         shutil.rmtree(webgraph_dir)

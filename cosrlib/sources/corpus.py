@@ -1,3 +1,5 @@
+import json
+
 from cosrlib.sources import Source
 from cosrlib.url import URL
 
@@ -7,7 +9,13 @@ class CorpusSource(Source):
 
     def iter_items(self):
 
-        for doc in self.args["docs"]:
+        if self.args.get("path"):
+            with open(self.args["path"], "r") as f:
+                docs = json.load(f)
+        else:
+            docs = self.args["docs"]
+
+        for doc in docs:
 
             url = URL(doc["url"].encode("utf-8"))
 

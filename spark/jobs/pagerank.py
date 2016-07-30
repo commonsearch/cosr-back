@@ -2,6 +2,7 @@ import os
 import sys
 import shutil
 import urlparse
+import time
 
 import boto
 
@@ -32,6 +33,12 @@ class PageRankJob(SparkJob):
         parser.add_argument("--maxiter", default=5, type=int,
                             help="Maximum iterations for the PageRank algorithm")
 
+        parser.add_argument("--tol", default=0.001, type=float,
+                            help="Tolerance for max rank diffs at each iteration. -1 to disable.")
+
+        parser.add_argument("--precision", default=0.000001, type=float,
+                            help="Don't transmit PageRank when there was less than this diff")
+
         parser.add_argument("--maxedges", default=0, type=int,
                             help="Maximum number of edges to consider")
 
@@ -50,6 +57,9 @@ class PageRankJob(SparkJob):
         parser.add_argument("--tmpdir", default="/tmp/cosr_spark_pagerank", type=str,
                             help="Temporary directory for storing iterations of the graph.")
 
+        parser.add_argument("--stats", default=5, type=int,
+                            help="Run stats every N iteration")
+
     def run_job(self, sc, sqlc):
 
         self.clean_tmpdir()
@@ -57,6 +67,7 @@ class PageRankJob(SparkJob):
         try:
 
             self.custom_pagerank(sc, sqlc)
+            # self.custom_pagerank_2(sc, sqlc)
             # self.graphframes_pagerank(sc, sqlc)
         finally:
             self.clean_tmpdir()
@@ -80,14 +91,167 @@ class PageRankJob(SparkJob):
             conn = boto.connect_s3(os.getenv("AWS_ACCESS_KEY_ID"), os.getenv("AWS_SECRET_ACCESS_KEY"))
             bucket = conn.get_bucket(parsed.netloc)
             path = parsed.path or "/cosr_spark_pagerank"
-            delete_key_list = list(bucket.list(prefix=path))
+            delete_key_list = list(bucket.list(prefix=path[1:]))  # No leading slash
             if len(delete_key_list) > 0:
-                bucket.delete_keys(delete_key_list)
+                try:
+                    bucket.delete_keys(delete_key_list)
+                except Exception, e:  # pylint: disable=broad-except
+                    print "Exception when cleaning tmpdir: %s" % e
 
         # TODO: HDFS
 
+    def wait_for_tmpdir(self, tmpdir):
+        if tmpdir.startswith("s3a://"):
+            parsed = urlparse.urlparse(tmpdir)
+            conn = boto.connect_s3(os.getenv("AWS_ACCESS_KEY_ID"), os.getenv("AWS_SECRET_ACCESS_KEY"))
+            bucket = conn.get_bucket(parsed.netloc)
+
+            _success = os.path.join(parsed.path, "_SUCCESS")
+
+            while not bucket.get_key(_success):
+                print "Waiting for %s ..." % _success
+                time.sleep(10)
+
     def custom_pagerank(self, sc, sqlc):
-        """ Our own PageRank implementation """
+        """ Our own PageRank implementation, based on Spark SQL and Pregel-like behaviour """
+
+        sc.setCheckpointDir("/tmp/spark-checkpoints")
+
+        edge_df = sqlc.read.load(self.args.edges)
+
+        if self.args.maxedges:
+            edge_df = edge_df.limit(self.args.maxedges)
+
+        vertex_df = sqlc.read.load(self.args.vertices)
+
+        if self.args.maxvertices:
+            vertex_df = vertex_df.limit(self.args.maxvertices)
+
+        sqlc.setConf("spark.sql.shuffle.partitions", str(self.args.shuffle_partitions))
+
+        # TODO: bootstrap with previous pageranks to accelerate convergence?
+        ranks_df = sql(sqlc, """
+            SELECT id, cast(0.15 as float) rank
+            FROM vertices
+        """, {"vertices": vertex_df})
+
+        edge_df.persist()
+        vertex_df.persist()
+        print "Starting iterations. %s edges, %s vertices." % (edge_df.count(), vertex_df.count())
+
+        iteration_tmpdir = None
+
+        for iteration in range(self.args.maxiter):
+
+            # We cast as strings because of https://issues.apache.org/jira/browse/SPARK-16802
+            # TODO: remove them once it's fixed!
+            #
+            changed_ranks_df = sql(sqlc, """
+                SELECT
+                    cast(edges.dst as string) id,
+                    cast(
+                        0.15 + 0.85 * sum(ranks_src.rank * edges.weight)
+                        as float
+                    ) rank_new,
+                    first(ranks_dst.rank) rank_old
+                FROM edges
+                LEFT OUTER JOIN ranks_src ON cast(edges.src as string) = cast(ranks_src.id as string)
+                LEFT OUTER JOIN ranks_dst ON cast(edges.dst as string) = cast(ranks_dst.id as string)
+                GROUP BY cast(edges.dst as string)
+                HAVING ABS(rank_old - rank_new) > %s
+            """ % self.args.precision, {"ranks_src": ranks_df, "ranks_dst": ranks_df, "edges": edge_df})
+
+            # Every N iterations, we check if we got below the tolerance level.
+            if (self.args.tol >= 0 or self.args.stats > 0) and (iteration % self.args.stats == 0):
+
+                changed_ranks_df.persist()
+
+                stats_df = sql(sqlc, """
+                    SELECT
+                        sum(abs(rank_new - rank_old)) as sum_diff,
+                        count(*) as count_diff,
+                        min(abs(rank_new - rank_old)) as min_diff,
+                        max(abs(rank_new - rank_old)) as max_diff,
+                        avg(abs(rank_new - rank_old)) as avg_diff,
+                        stddev(abs(rank_new - rank_old)) as stddev_diff
+                    FROM changes
+                """, {"changes": changed_ranks_df})
+
+                stats = stats_df.collect()[0]
+
+                print "Iteration %s, %s changed ranks" % (iteration, stats["count_diff"])
+                print "Stats: %s" % repr(stats)
+
+                if (stats["count_diff"] == 0) or (stats["max_diff"] <= self.args.tol):
+                    print "Max diff was below tolerance: stopping iterations!"
+                    break
+
+                top_changes_df = sql(sqlc, """
+                    SELECT
+                        (rank_new - rank_old) diff,
+                        rank_old,
+                        rank_new,
+                        names.domain domain
+                    FROM changes
+                    JOIN names ON names.id = changes.id
+                    ORDER BY abs(rank_new - rank_old) DESC
+                """, {"changes": changed_ranks_df, "names": vertex_df})
+
+                print "Top 20 diffs"
+                print "\n".join([
+                    "%3.3f (%3.3f => %3.3f) %s " % x
+                    for x in top_changes_df.limit(20).collect()
+                ])
+
+            new_ranks_df = sql(sqlc, """
+                SELECT ranks.id id, COALESCE(changed_ranks.rank_new, ranks.rank) rank
+                FROM ranks
+                LEFT JOIN changed_ranks ON cast(changed_ranks.id as string) = cast(ranks.id as string)
+            """, {"ranks": ranks_df, "changed_ranks": changed_ranks_df})
+
+            # At this point we need to break the RDD dependency chain
+            # Writing & loading Parquet seems to be more efficient than checkpointing the RDD.
+
+            iteration_tmpdir_previous = iteration_tmpdir
+            iteration_tmpdir = os.path.join(self.args.tmpdir, "iter_%s" % iteration)
+
+            new_ranks_df.write.parquet(iteration_tmpdir)
+
+            # S3 in us-east-1 should support read-after-write consistency since 2015
+            # but we still have transient errors
+            self.wait_for_tmpdir(iteration_tmpdir)
+
+            new_ranks_df.unpersist()
+            ranks_df.unpersist()
+            changed_ranks_df.unpersist()
+
+            ranks_df = sqlc.read.load(iteration_tmpdir)
+
+            if iteration_tmpdir_previous is not None:
+                self.clean_tmpdir(directory=iteration_tmpdir_previous)
+
+        # No more need for the edges after iterations
+        edge_df.unpersist()
+
+        final_df = sql(sqlc, """
+            SELECT CONCAT(names.domain, ' ', ranks.rank) r
+            FROM ranks
+            JOIN names ON cast(names.id as string) = cast(ranks.id as string)
+            ORDER BY ranks.rank DESC
+        """, {"names": vertex_df, "ranks": ranks_df})
+
+        if self.args.dump:
+
+            final_df.coalesce(1).write.text(
+                self.args.dump,
+                compression="gzip" if self.args.gzip else "none"
+            )
+
+        else:
+            print final_df.rdd.collect()
+
+    def custom_pagerank_2(self, sc, sqlc):
+        """ Alternative PageRank implementation, with fixed number of steps """
 
         sc.setCheckpointDir("/tmp/spark-checkpoints")
 
@@ -115,7 +279,8 @@ class PageRankJob(SparkJob):
         """, {"vertices": vertex_df})
 
         edge_df.persist()
-        print "Starting iterations. Number of edges: %s" % edge_df.count()
+        vertex_df.persist()
+        print "Starting iterations. %s edges, %s vertices." % (edge_df.count(), vertex_df.count())
 
         iteration_tmpdir = None
 
@@ -138,8 +303,62 @@ class PageRankJob(SparkJob):
             iteration_tmpdir_previous = iteration_tmpdir
             iteration_tmpdir = os.path.join(self.args.tmpdir, "iter_%s" % iteration)
 
-            # S3 in us-east-1 supports read-after-write consistency since 2015
+            # Every N iterations, we check if we got below the tolerance level.
+            if (self.args.tol >= 0 or self.args.stats > 0) and (iteration % self.args.stats == 0):
+
+                new_ranks_df.persist()
+                ranks_df.persist()
+                vertex_df.persist()
+
+                stats_df = sql(sqlc, """
+                    SELECT
+                        sum(diff) as sum_diff,
+                        count(*) as count_diff,
+                        min(diff) as min_diff,
+                        max(diff) as max_diff,
+                        avg(diff) as avg_diff,
+                        stddev(diff) as stddev_diff
+                    FROM (
+                        SELECT ABS(old_ranks.rank - new_ranks.rank) diff
+                        FROM old_ranks
+                        JOIN new_ranks ON old_ranks.id = new_ranks.id
+                        WHERE old_ranks.rank != new_ranks.rank
+                    ) diffs
+                """, {"old_ranks": ranks_df, "new_ranks": new_ranks_df})
+
+                stats = stats_df.collect()[0]
+                print "Max diff at iteration %s : %s" % (iteration, stats["max_diff"])
+                print "Other stats: %s" % repr(stats)
+
+                if (stats["count_diff"] == 0) or (stats["max_diff"] <= self.args.tol):
+                    print "Max diff was below tolerance: stopping iterations!"
+                    break
+
+                top_diffs_df = sql(sqlc, """
+                    SELECT
+                        (new_ranks.rank - old_ranks.rank) diff,
+                        old_ranks.rank old_rank,
+                        new_ranks.rank new_rank,
+                        names.domain domain
+                    FROM old_ranks
+                    JOIN new_ranks ON old_ranks.id = new_ranks.id
+                    JOIN names ON names.id = old_ranks.id
+                    WHERE old_ranks.rank != new_ranks.rank
+                    ORDER BY ABS(diff) DESC
+                """, {"old_ranks": ranks_df, "new_ranks": new_ranks_df, "names": vertex_df})
+
+                print "Top 100 diffs"
+                print "\n".join(["%3.3f %3.3f %3.3f %s " % x for x in top_diffs_df.limit(100).collect()])
+
             new_ranks_df.write.parquet(iteration_tmpdir)
+
+            # S3 in us-east-1 should support read-after-write consistency since 2015
+            # but we still have transient errors
+            self.wait_for_tmpdir(iteration_tmpdir)
+
+            new_ranks_df.unpersist()
+            ranks_df.unpersist()
+
             ranks_df = sqlc.read.load(iteration_tmpdir)
 
             if iteration_tmpdir_previous is not None:
@@ -166,7 +385,7 @@ class PageRankJob(SparkJob):
             print final_df.rdd.collect()
 
     def graphframes_pagerank(self, sc, sqlc):
-        """ Use GraphFrame's PageRank implementation """
+        """ GraphFrame's PageRank implementation """
 
         from graphframes import GraphFrame  # pylint: disable=import-error
 

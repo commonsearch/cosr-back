@@ -109,10 +109,6 @@ class DomainToDomainParquet(DomainToDomain):
             except Exception:  # pylint: disable=broad-except
                 return []
 
-            if name.startswith(".") or name.startswith("www."):
-                print "HEYO %s %s %s" % (repr(name), repr(domain), repr(record))
-                raise Exception("HEYO %s %s %s" % (repr(name), repr(domain), repr(record)))
-
             return [(long(_id), str(name))]
 
         rdd_domains = all_domains_df.rdd.flatMap(iter_domain)

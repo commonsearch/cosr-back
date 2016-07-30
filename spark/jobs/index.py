@@ -124,13 +124,15 @@ class IndexJob(SparkJob):
 
             elif source_name == "corpus":
 
-                partitions = source_args["docs"]
+                partitions = source_args.get("docs", ["__from_file__"])
+                path = source_args.get("path")
 
                 def index_partition(doc):
 
                     ds = load_source("corpus", {
                         "maxdocs": maxdocs[source_spec],  # pylint: disable=cell-var-from-loop
                         "docs": [doc],
+                        "path": path,  # pylint: disable=cell-var-from-loop
                         "plugins": self.plugins
                     })
                     return self.index_documents(ds)
