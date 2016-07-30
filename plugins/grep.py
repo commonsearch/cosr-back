@@ -1,5 +1,6 @@
 from pyspark.sql import types as SparkTypes
 from cosrlib.plugins import Plugin
+from cosrlib.spark import sql
 
 
 class Words(Plugin):
@@ -32,19 +33,19 @@ class Words(Plugin):
 
     def spark_pipeline_action(self, sc, sqlc, df, indexer):
 
-        # TODO: we might be able to do that in pure Spark SQL
-        def fmt(row):
-            if not row or not row["grep_words"]:
-                return []
-            return ["%s %s" % (",".join(sorted(row["grep_words"])), row["url"])]
-
-        rdd = df.rdd \
-            .flatMap(fmt)
+        lines_df = sql(sqlc, """
+            SELECT CONCAT(CONCAT_WS(",", SORT_ARRAY(grep_words)), " ", url) r
+            FROM df
+            WHERE size(grep_words) > 0
+        """, {"df": df})
 
         if self.args.get("coalesce"):
-            rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))
+            lines_df = lines_df.coalesce(int(self.args["coalesce"]))
 
-        rdd.saveAsTextFile(self.args["path"])
+        lines_df.write.text(
+            self.args["path"],
+            compression="gzip" if self.args.get("gzip") else "none"
+        )
 
         return True
 
