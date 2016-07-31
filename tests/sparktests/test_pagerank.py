@@ -147,6 +147,8 @@ DEFAULT_MAXITER = 100
 DEFAULT_TOL = 0
 
 
+# Skipped until https://issues.apache.org/jira/browse/SPARK-16802 is fixed
+@pytest.mark.skip
 @pytest.mark.parametrize(("p_graph_name"), sorted(GRAPHS.keys()))
 def test_pagerank_computation(p_graph_name, sparksubmit):
 
@@ -177,7 +179,7 @@ def test_pagerank_computation(p_graph_name, sparksubmit):
         ))
 
         # Now compute page rank on the domain graph!
-        sparksubmit("spark/jobs/pagerank.py --edges %s/out/edges/ --vertices %s/out/vertices/ --dump %s/out/pagerank/  --maxiter %s --shuffle_partitions 4 --tol %s --stats 1" % (
+        sparksubmit("spark/jobs/pagerank.py --edges %s/out/edges/ --vertices %s/out/vertices/ --dump %s/out/pagerank/  --maxiter %s --shuffle_partitions 4 --tol %s --stats 1 --include_orphans" % (
             webgraph_dir,
             webgraph_dir,
             webgraph_dir,

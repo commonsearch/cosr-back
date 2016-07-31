@@ -76,7 +76,7 @@ RUN /var/lib/dpkg/info/ca-certificates-java.postinst configure
 ENV ROCKSDB_VERSION 4.1
 RUN wget https://github.com/facebook/rocksdb/archive/v${ROCKSDB_VERSION}.tar.gz && \
   tar -zxvf v${ROCKSDB_VERSION}.tar.gz && cd rocksdb-${ROCKSDB_VERSION} && \
-  make shared_lib && make install && \
+  PORTABLE=1 make shared_lib && make install && \
   cd .. && rm -rf rocksdb-${ROCKSDB_VERSION} v${ROCKSDB_VERSION}.tar.gz
 
 

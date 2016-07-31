@@ -14,6 +14,7 @@ elif os.path.isdir("/cosr/back"):
     sys.path.insert(-1, "/cosr/back")
 
 from cosrlib.spark import SparkJob, sql
+from pyspark.storagelevel import StorageLevel
 # from pyspark.sql import types as SparkTypes
 
 
@@ -48,6 +49,9 @@ class PageRankJob(SparkJob):
         parser.add_argument("--dump", default=None, type=str,
                             help="Directory for storing list of pageranks by domain")
 
+        parser.add_argument("--include_orphans", default=False, action="store_true",
+                            help="Add orphan vertices, not linked to by any other one.")
+
         parser.add_argument("--shuffle_partitions", default=10, type=int,
                             help="Number of shuffle partitions to use in the Spark pipeline")
 
@@ -59,6 +63,9 @@ class PageRankJob(SparkJob):
 
         parser.add_argument("--stats", default=5, type=int,
                             help="Run stats every N iteration")
+
+        parser.add_argument("--top_diffs", default=0, type=int,
+                            help="Print top N pagerank diffs at each stats iteration")
 
     def run_job(self, sc, sqlc):
 
@@ -98,7 +105,9 @@ class PageRankJob(SparkJob):
                 except Exception, e:  # pylint: disable=broad-except
                     print "Exception when cleaning tmpdir: %s" % e
 
-        # TODO: HDFS
+        # TODO
+        elif tmpdir.startswith("hdfs://"):
+            pass
 
     def wait_for_tmpdir(self, tmpdir):
         if tmpdir.startswith("s3a://"):
@@ -115,7 +124,7 @@ class PageRankJob(SparkJob):
     def custom_pagerank(self, sc, sqlc):
         """ Our own PageRank implementation, based on Spark SQL and Pregel-like behaviour """
 
-        sc.setCheckpointDir("/tmp/spark-checkpoints")
+        # sc.setCheckpointDir("/tmp/spark-checkpoints")
 
         edge_df = sqlc.read.load(self.args.edges)
 
@@ -129,42 +138,46 @@ class PageRankJob(SparkJob):
 
         sqlc.setConf("spark.sql.shuffle.partitions", str(self.args.shuffle_partitions))
 
+        edge_df.persist(StorageLevel.MEMORY_AND_DISK)
+        vertex_df.persist(StorageLevel.MEMORY_AND_DISK)
+
+        print "Starting iterations. %s edges, %s vertices." % (edge_df.count(), vertex_df.count())
+
         # TODO: bootstrap with previous pageranks to accelerate convergence?
         ranks_df = sql(sqlc, """
-            SELECT id, cast(0.15 as float) rank
+            SELECT vertices.id id, cast(1.0 as float) rank
             FROM vertices
-        """, {"vertices": vertex_df})
+            JOIN edges ON edges.dst = vertices.id
+            GROUP BY vertices.id
+        """, {"vertices": vertex_df, "edges": edge_df})
 
-        edge_df.persist()
-        vertex_df.persist()
-        print "Starting iterations. %s edges, %s vertices." % (edge_df.count(), vertex_df.count())
+        # TODO: optimize further by taking out outDegree=0 vertices and computing their pagerank as a post-filter.
+        # LEFT OUTER JOIN edges edges_src on edges_src.src  = vertices.id
+        # WHERE edges_src.src IS NOT NULL
 
         iteration_tmpdir = None
 
         for iteration in range(self.args.maxiter):
 
-            # We cast as strings because of https://issues.apache.org/jira/browse/SPARK-16802
-            # TODO: remove them once it's fixed!
-            #
             changed_ranks_df = sql(sqlc, """
                 SELECT
-                    cast(edges.dst as string) id,
+                    edges.dst id,
                     cast(
-                        0.15 + 0.85 * sum(ranks_src.rank * edges.weight)
+                        0.15 + 0.85 * sum(COALESCE(ranks_src.rank, 0.15) * edges.weight)
                         as float
                     ) rank_new,
                     first(ranks_dst.rank) rank_old
                 FROM edges
-                LEFT OUTER JOIN ranks_src ON cast(edges.src as string) = cast(ranks_src.id as string)
-                LEFT OUTER JOIN ranks_dst ON cast(edges.dst as string) = cast(ranks_dst.id as string)
-                GROUP BY cast(edges.dst as string)
+                LEFT OUTER JOIN ranks_src ON edges.src = ranks_src.id
+                LEFT OUTER JOIN ranks_dst ON edges.dst = ranks_dst.id
+                GROUP BY edges.dst
                 HAVING ABS(rank_old - rank_new) > %s
             """ % self.args.precision, {"ranks_src": ranks_df, "ranks_dst": ranks_df, "edges": edge_df})
 
             # Every N iterations, we check if we got below the tolerance level.
             if (self.args.tol >= 0 or self.args.stats > 0) and (iteration % self.args.stats == 0):
 
-                changed_ranks_df.persist()
+                changed_ranks_df.persist(StorageLevel.MEMORY_AND_DISK)
 
                 stats_df = sql(sqlc, """
                     SELECT
@@ -186,49 +199,77 @@ class PageRankJob(SparkJob):
                     print "Max diff was below tolerance: stopping iterations!"
                     break
 
-                top_changes_df = sql(sqlc, """
-                    SELECT
-                        (rank_new - rank_old) diff,
-                        rank_old,
-                        rank_new,
-                        names.domain domain
-                    FROM changes
-                    JOIN names ON names.id = changes.id
-                    ORDER BY abs(rank_new - rank_old) DESC
-                """, {"changes": changed_ranks_df, "names": vertex_df})
+                if self.args.top_diffs > 0:
 
-                print "Top 20 diffs"
-                print "\n".join([
-                    "%3.3f (%3.3f => %3.3f) %s " % x
-                    for x in top_changes_df.limit(20).collect()
-                ])
+                    top_changes_df = sql(sqlc, """
+                        SELECT
+                            (rank_new - rank_old) diff,
+                            rank_old,
+                            rank_new,
+                            names.domain domain
+                        FROM changes
+                        JOIN names ON names.id = changes.id
+                        ORDER BY abs(rank_new - rank_old) DESC
+                    """, {"changes": changed_ranks_df, "names": vertex_df})
+
+                    print "Top %s diffs" % self.args.top_changes
+                    print "\n".join([
+                        "%3.3f (%3.3f => %3.3f) %s " % x
+                        for x in top_changes_df.limit(self.args.top_diffs).collect()
+                    ])
+
+                    top_changes_df.unpersist()
 
             new_ranks_df = sql(sqlc, """
                 SELECT ranks.id id, COALESCE(changed_ranks.rank_new, ranks.rank) rank
                 FROM ranks
-                LEFT JOIN changed_ranks ON cast(changed_ranks.id as string) = cast(ranks.id as string)
+                LEFT JOIN changed_ranks ON changed_ranks.id = ranks.id
             """, {"ranks": ranks_df, "changed_ranks": changed_ranks_df})
+
+            if (iteration + 1) % 5 != 0:
+
+                new_ranks_df.persist(StorageLevel.MEMORY_AND_DISK)
+
+                new_ranks_df.count()  # Materialize the RDD
+
+                print "Iteration %s cached" % (iteration, )
+
+                ranks_df.unpersist()
+                changed_ranks_df.unpersist()
+                ranks_df = new_ranks_df
 
             # At this point we need to break the RDD dependency chain
             # Writing & loading Parquet seems to be more efficient than checkpointing the RDD.
+            else:
 
-            iteration_tmpdir_previous = iteration_tmpdir
-            iteration_tmpdir = os.path.join(self.args.tmpdir, "iter_%s" % iteration)
+                print "Iteration %s, saving to parquet" % iteration
 
-            new_ranks_df.write.parquet(iteration_tmpdir)
+                iteration_tmpdir_previous = iteration_tmpdir
+                iteration_tmpdir = os.path.join(self.args.tmpdir, "iter_%s" % iteration)
 
-            # S3 in us-east-1 should support read-after-write consistency since 2015
-            # but we still have transient errors
-            self.wait_for_tmpdir(iteration_tmpdir)
+                new_ranks_df.write.parquet(iteration_tmpdir)
 
-            new_ranks_df.unpersist()
-            ranks_df.unpersist()
-            changed_ranks_df.unpersist()
+                # S3 in us-east-1 should support read-after-write consistency since 2015
+                # but we still have transient errors
+                self.wait_for_tmpdir(iteration_tmpdir)
 
-            ranks_df = sqlc.read.load(iteration_tmpdir)
+                new_ranks_df.unpersist()
+                ranks_df.unpersist()
+                changed_ranks_df.unpersist()
 
-            if iteration_tmpdir_previous is not None:
-                self.clean_tmpdir(directory=iteration_tmpdir_previous)
+                ranks_df = sqlc.read.load(iteration_tmpdir)
+
+                if iteration_tmpdir_previous is not None:
+                    self.clean_tmpdir(directory=iteration_tmpdir_previous)
+
+        if self.args.include_orphans:
+
+            ranks_df = ranks_df.unionAll(sql(sqlc, """
+                SELECT vertices.id id, cast(0.15 as float) rank
+                FROM vertices
+                LEFT OUTER JOIN edges ON edges.dst  = vertices.id
+                WHERE edges.dst is NULL
+            """, {"vertices": vertex_df, "edges": edge_df}))
 
         # No more need for the edges after iterations
         edge_df.unpersist()
@@ -236,7 +277,7 @@ class PageRankJob(SparkJob):
         final_df = sql(sqlc, """
             SELECT CONCAT(names.domain, ' ', ranks.rank) r
             FROM ranks
-            JOIN names ON cast(names.id as string) = cast(ranks.id as string)
+            JOIN names ON names.id = ranks.id
             ORDER BY ranks.rank DESC
         """, {"names": vertex_df, "ranks": ranks_df})
 

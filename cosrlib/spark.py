@@ -144,6 +144,9 @@ class SparkJob(object):
 
             ("spark.speculation", "false"),
 
+            # ("spark.sql.parquet.enableVectorizedReader", "false")
+
+            # TODO https://groups.google.com/forum/#!topic/spark-users/YnAlw7dVdQA ?
             # set("spark.akka.frameSize", "128")
         ))
 

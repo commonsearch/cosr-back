@@ -50,7 +50,7 @@ class MostExternallyLinkedPages(Plugin):
             ) == "%s"
             GROUP BY regexp_replace(url_to, "^http(s?)://", "")
             ORDER BY COUNT(*) DESC
-        """ % (len(domain), len(domain), domain), {"df": df})
+        """ % (len(domain) - 1, len(domain), domain), {"df": df})
 
         if self.args.get("limit"):
             lines_df = lines_df.limit(int(self.args["limit"]))
