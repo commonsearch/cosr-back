@@ -75,7 +75,7 @@ Coverage XML written to file coverage.xml
 ### Background on the Common Crawl Dataset
 Common Crawl takes a **snapshot** of the internet approximately every month.  Since all of the data is very, very, large the data is split up into **segments**.  All of these segments are hosted on by Amazon S3 as a part of their very generous Public Datasets program.
 
-If you're curious where you can find the URL's to the segments, visit the [Common Crawl Website](http://commoncrawl.org/the-data/get-started/).  If you click on a specific month, you can find a link to download all of the WARC paths.  Each path inside of this WARC paths file is a link to a Common Crawl Segment.  **Don't worry, CSR-back makes it easy to download segments from Common Crawl ... we will help you download your first segment in the section below.**
+If you're curious where you can find the URL's to the segments, visit the [Common Crawl Website](http://commoncrawl.org/the-data/get-started/).  If you click on a specific month, you can find a link to download all of the WARC paths.  Each path inside of this WARC paths file is a link to a Common Crawl Segment.  **Don't worry, cosr-back makes it easy to download segments from Common Crawl ... we will help you download your first segment in the section below.**
 
 Note: While experimenting locally, as a general practice, it is recommended to limit the number of segment URL's that you are processing from to 1 or 2, to avoid overloading your own computer.  Each segment can be ~ 500 mb or more.
 
