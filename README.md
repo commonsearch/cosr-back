@@ -1,6 +1,6 @@
 # cosr-back
 
-[![Join us on Slack](https://slack.commonsearch.org/badge.svg)](slack.commonsearch.org) [![Build Status](https://travis-ci.org/commonsearch/cosr-back.svg?branch=master)](https://travis-ci.org/commonsearch/cosr-back) [![Coverage Status](https://coveralls.io/repos/github/commonsearch/cosr-back/badge.svg?branch=master)](https://coveralls.io/github/commonsearch/cosr-back?branch=master) [![Apache License 2.0](https://img.shields.io/github/license/commonsearch/cosr-back.svg)](LICENSE)
+[![Join us on Slack](https://slack.commonsearch.org/badge.svg)](https://slack.commonsearch.org) [![Build Status](https://travis-ci.org/commonsearch/cosr-back.svg?branch=master)](https://travis-ci.org/commonsearch/cosr-back) [![Coverage Status](https://coveralls.io/repos/github/commonsearch/cosr-back/badge.svg?branch=master)](https://coveralls.io/github/commonsearch/cosr-back?branch=master) [![Apache License 2.0](https://img.shields.io/github/license/commonsearch/cosr-back.svg)](LICENSE)
 
 This repository contains the main components of the [Common Search](https://about.commonsearch.org) backend.
 
