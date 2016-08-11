@@ -24,11 +24,6 @@ RUN echo 'deb http://ftp.us.debian.org/debian jessie-backports main' > /etc/apt/
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/jre
 ENV LANG C.UTF-8
-ENV JAVA_VERSION 8u91
-ENV JAVA_DEBIAN_VERSION 8u91-b14-1~bpo8+1
-# see https://bugs.debian.org/775775
-# and https://github.com/docker-library/java/issues/19#issuecomment-70546872
-ENV CA_CERTIFICATES_JAVA_VERSION 20140324
 
 RUN apt-get clean && apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -57,16 +52,11 @@ RUN apt-get clean && apt-get update && apt-get upgrade -y && apt-get install -y 
     net-tools \
     unzip \
     dstat \
-    openjdk-8-jre-headless="$JAVA_DEBIAN_VERSION" \
-    ca-certificates-java="$CA_CERTIFICATES_JAVA_VERSION"
+    openjdk-8-jre-headless \
+    ca-certificates-java
 
 # We could do this to save on image size but we're optimizing for developer experience instead
 # && rm -rf /var/lib/apt/lists/*
-
-# see CA_CERTIFICATES_JAVA_VERSION notes above
-RUN /var/lib/dpkg/info/ca-certificates-java.postinst configure
-
-
 
 
 #
