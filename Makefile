@@ -128,20 +128,19 @@ restart_services: stop_services start_services
 # Reindex 1 WARC file from Common Crawl
 reindex1:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit spark/jobs/index.py --source commoncrawl:limit=1 --profile
+	spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=1 --profile
 
 # Reindex 10 WARC files from Common Crawl
 reindex10:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit spark/jobs/index.py --source commoncrawl:limit=10 --profile
+	spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=10 --profile
 
 # Do a standard reindex
 reindex_standard:
 
 	rm -rf ./out/
 	./scripts/elasticsearch_reset.py --delete
-	# spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --stop_delay 600 --source wikidata:maxdocs=10000,block=1 --source commoncrawl:limit=40,maxdocs=100,block=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.webgraph.DomainToDomainParquet:path=/cosr/back/out/,coalesce=1
-	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --source commoncrawl:limit=200,maxdocs=100,block=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.webgraph.DomainToDomainParquet:path=/cosr/back/out/
+	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/pipeline.py --source commoncrawl:limit=200,maxdocs=100,block=1 --plugin plugins.webgraph.DomainToDomainParquet:path=/cosr/back/out/
 
 pagerank_standard:
 	rm -rf ./out/pagerank/
@@ -152,14 +151,14 @@ pagerank_standard:
 
 dump_standard:
 	rm -rf ./out/
-	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=100,maxdocs=1000 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata,abort=1 --plugin plugins.webgraph.DomainToDomainParquet
+	spark-submit --verbose spark/jobs/pipeline.py --stop_delay 600 --source commoncrawl:limit=100,maxdocs=1000 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata,abort=1 --plugin plugins.webgraph.DomainToDomainParquet
 
 viewdump_standard:
 	hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json ./out/metadata/
 
 graph_standard:
 	rm -rf out/d2dgraph
-	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source parquet:path=./out/metadata/ --plugin plugins.webgraph.DomainToDomainParquet:path=./out/d2dgraph,coalesce=10
+	spark-submit --verbose spark/jobs/pipeline.py --stop_delay 600 --source parquet:path=./out/metadata/ --plugin plugins.webgraph.DomainToDomainParquet:path=./out/d2dgraph,coalesce=10
 
 
 # Run the explainer web service inside Docker

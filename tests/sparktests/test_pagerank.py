@@ -173,7 +173,7 @@ def test_pagerank_computation(p_graph_name, sparksubmit):
         with open(corpus_file, "w") as f:
             f.write(json.dumps(corpus["docs"]))
 
-        sparksubmit("spark/jobs/index.py  --plugin plugins.filter.All:parse=1,index=0 --source corpus:path=%s,persist=1  --plugin plugins.webgraph.DomainToDomainParquet:coalesce=4,shuffle_partitions=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source corpus:path=%s,persist=1 --plugin plugins.webgraph.DomainToDomainParquet:coalesce=4,shuffle_partitions=1,path=%s/out/" % (
             corpus_file,
             webgraph_dir
         ))

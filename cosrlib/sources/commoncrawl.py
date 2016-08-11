@@ -26,7 +26,7 @@ def list_commoncrawl_warc_filenames(limit=None, skip=0, version=None):
 
         if version == "latest":
             # TODO: how to get the latest version automatically?
-            version = "CC-MAIN-2016-26"
+            version = "CC-MAIN-2016-30"
 
         r = requests.get("https://commoncrawl.s3.amazonaws.com/crawl-data/%s/warc.paths.gz" % version)
         data = gzip.GzipFile(fileobj=StringIO.StringIO(r.content), mode="rb").read()
@@ -40,11 +40,20 @@ def list_commoncrawl_warc_filenames(limit=None, skip=0, version=None):
 class CommoncrawlSource(WebarchiveSource):
     """ CommonCrawl-specific .warc Source """
 
-    def open_warc_stream(self):
+    def get_partitions(self):
+        """ Returns a list of Common Crawl segments """
+
+        return list_commoncrawl_warc_filenames(
+            limit=self.args.get("limit"),
+            skip=self.args.get("skip"),
+            version=self.args.get("version")
+        )
+
+    def open_warc_stream(self, filepath):
         """ Creates a WARC record iterator from the filepath given to the Source """
 
         # Test is the file is cached on the local disk
-        local_data_file = os.path.join(config["PATH_BACK"], 'local-data/common-crawl/%s' % self.args["file"])
+        local_data_file = os.path.join(config["PATH_BACK"], 'local-data/common-crawl/%s' % filepath)
 
         if os.path.isfile(local_data_file):
             filereader = open(local_data_file, "rb")
@@ -58,6 +67,6 @@ class CommoncrawlSource(WebarchiveSource):
 
             pds = conn.get_bucket('commoncrawl')
             filereader = Key(pds)
-            filereader.key = self.args["file"]
+            filereader.key = filepath
 
-        return self._warc_reader_from_file(filereader, self.args["file"])
+        return self._warc_reader_from_file(filereader, filepath)

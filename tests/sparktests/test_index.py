@@ -48,12 +48,12 @@ CORPUSES = {
 @pytest.mark.elasticsearch
 def test_spark_index(searcher, indexer, sparksubmit):
 
-    # TODO: we could make this faster by disabling the web UI and other components?
-    sparksubmit("spark/jobs/index.py --source corpus:%s" % pipes.quote(json.dumps(CORPUSES["simple_docs"])))
+    sparksubmit("spark/jobs/pipeline.py --plugin plugins.filter.All:index_body=1 --source corpus:%s" % pipes.quote(
+        json.dumps(CORPUSES["simple_docs"])
+    ))
 
     search_res = searcher.client.search("hello", explain=False, lang=None, fetch_docs=True)
     hits = search_res["hits"]
     assert len(hits) == 1
     assert hits[0]["title"] == "Hello"
     assert hits[0]["url"] == "http://example.com/my-single-doc"
-

@@ -24,7 +24,8 @@ def test_spark_multiple_sources(searcher, indexer, sparksubmit):
     # Sources are done in order and overlapping documents are overwritten
     # This is because they both use block=1
     sparksubmit(
-        """spark/jobs/index.py \
+        """spark/jobs/pipeline.py \
+         --plugin plugins.filter.All:index_body=1 \
          --source wikidata:block=1 \
          --source corpus:%s """ % (
             pipes.quote(json.dumps(CORPUS)),

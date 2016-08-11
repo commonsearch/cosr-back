@@ -14,6 +14,22 @@ except ImportError:
 class WebarchiveSource(Source):
     """ Generic .warc Source """
 
+    def get_partitions(self):
+
+        # .txt file with one .warc path per line
+        if self.args.get("list"):
+
+            with open(self.args["list"], "rb") as f:
+                return [x.strip() for x in f.readlines()]
+
+        # Direct list of .warc filepaths
+        elif self.args.get("paths"):
+            return self.args["paths"]
+
+        # Single .warc
+        else:
+            return [self.args["path"]]
+
     def _warc_reader_from_file(self, filereader, filepath):
         """ Creates a WARC record iterator from a file reader """
 
@@ -23,16 +39,16 @@ class WebarchiveSource(Source):
             # TODO: investigate how we could use cloudflare's zlib
             return warc.WARCFile(fileobj=GzipStreamFile(filereader))
 
-    def open_warc_stream(self):
+    def open_warc_stream(self, filepath):
         """ Creates a WARC record iterator from the filepath given to the Source """
 
-        filereader = open(self.args["file"], "rb")
-        return self._warc_reader_from_file(filereader, self.args["file"])
+        filereader = open(filepath, "rb")
+        return self._warc_reader_from_file(filereader, filepath)
 
-    def iter_items(self):
+    def iter_items(self, partition):
         """ Yields objects in the source's native format """
 
-        warc_stream = self.open_warc_stream()
+        warc_stream = self.open_warc_stream(partition)
 
         for record in warc_stream:
 

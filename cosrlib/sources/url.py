@@ -5,10 +5,18 @@ import requests
 class UrlSource(Source):
     """ Source that actually fetches an URL. Use with caution! """
 
-    def iter_items(self):
+    def get_partitions(self):
 
-        for url in self.args["urls"]:
-            fetched = requests.get(url, headers={'user-agent': 'CommonSearch/dev'})
+        if self.args.get("urls"):
+            return self.args["urls"]
+        else:
+            return [self.args["url"]]
 
-            if fetched.status_code == 200:
-                yield url, fetched.headers, "html", 2, fetched.content
+    def iter_items(self, partition):
+
+        url = partition
+
+        fetched = requests.get(url, headers={'user-agent': 'CommonSearch/dev'})
+
+        if fetched.status_code == 200:
+            yield url, fetched.headers, "html", 2, fetched.content

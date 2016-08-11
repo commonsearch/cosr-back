@@ -6,12 +6,16 @@ from urlserver.datasources import load_datasource
 class WikidataSource(Source):
     """ Source that reads 'fake' documents from the WikiData dump """
 
-    def iter_documents(self):
+    def get_partitions(self):
+
+        return ["__wikidata_single_dump__"]
+
+    def iter_documents(self, partition):
 
         datasource = load_datasource("wikidata")
 
         i = 0
-        maxdocs = int(self.args.get("maxdocs") or 9999999999)
+        maxdocs = int(self.args.get("maxdocs") or 0)
 
         for key, _ in datasource.iter_rows():
 
@@ -23,5 +27,5 @@ class WikidataSource(Source):
             yield doc
 
             i += 1
-            if i > maxdocs:
+            if i > maxdocs > 0:
                 return

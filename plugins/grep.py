@@ -39,8 +39,9 @@ class Words(Plugin):
             WHERE size(grep_words) > 0
         """, {"df": df})
 
-        if self.args.get("coalesce"):
-            lines_df = lines_df.coalesce(int(self.args["coalesce"]))
+        coalesce = int(self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            lines_df = lines_df.coalesce(coalesce)
 
         lines_df.write.text(
             self.args["path"],

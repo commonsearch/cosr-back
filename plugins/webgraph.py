@@ -49,7 +49,7 @@ class DomainToDomain(Plugin):
 
         rdd = df.rdd.flatMap(iter_links_domain).distinct().map(lambda row: "%s %s" % row)
 
-        if self.args.get("coalesce"):
+        if int(self.args.get("coalesce", 1) or 0) > 0:
             rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))
 
         codec = None
@@ -115,10 +115,9 @@ class DomainToDomainParquet(DomainToDomain):
 
         vertex_df = createDataFrame(sqlc, rdd_domains, vertex_graph_schema).distinct()
 
-        if self.args.get("coalesce_vertices") or self.args.get("coalesce"):
-            vertex_df = vertex_df.coalesce(
-                int(self.args.get("coalesce_vertices") or self.args.get("coalesce"))
-            )
+        coalesce = int(self.args.get("coalesce_vertices") or self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            vertex_df = vertex_df.coalesce(coalesce)
 
         vertex_df.write.parquet(os.path.join(self.args["path"], "vertices"))
 
@@ -184,9 +183,8 @@ class DomainToDomainParquet(DomainToDomain):
             JOIN weights on edges.src = weights.id
         """, {"edges": edge_df, "weights": weights_df})
 
-        if self.args.get("coalesce_edges") or self.args.get("coalesce"):
-            weighted_edge_df = weighted_edge_df.coalesce(
-                int(self.args.get("coalesce_edges") or self.args.get("coalesce"))
-            )
+        coalesce = int(self.args.get("coalesce_edges") or self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            weighted_edge_df = weighted_edge_df.coalesce(coalesce)
 
         weighted_edge_df.write.parquet(os.path.join(self.args["path"], "edges"))

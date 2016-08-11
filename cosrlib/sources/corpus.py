@@ -7,13 +7,22 @@ from cosrlib.url import URL
 class CorpusSource(Source):
     """ Source that yields documents from a static corpus. Mostly used in tests """
 
-    def iter_items(self):
+    def get_partitions(self):
 
         if self.args.get("path"):
-            with open(self.args["path"], "r") as f:
-                docs = json.load(f)
+            return [self.args["path"]]
         else:
-            docs = self.args["docs"]
+            return self.args.get("docs") or []
+
+    def iter_items(self, partition):
+        """ Partition can be either a single raw document, or a filepath to a JSON file """
+
+        if isinstance(partition, dict):
+            docs = [partition]
+
+        else:
+            with open(partition, "r") as f:
+                docs = json.load(f)
 
         for doc in docs:
 

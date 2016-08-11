@@ -15,8 +15,9 @@ class DocumentMetadataParquet(Plugin):
 
     def spark_pipeline_action(self, sc, sqlc, doc_df, indexer):
 
-        if self.args.get("coalesce"):
-            doc_df = doc_df.coalesce(int(self.args["coalesce"]))
+        coalesce = int(self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            doc_df = doc_df.coalesce(coalesce)
 
         doc_df.write.parquet(self.args["path"])
 

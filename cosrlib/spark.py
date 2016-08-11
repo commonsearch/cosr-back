@@ -40,23 +40,18 @@ def createDataFrame(sqlc, data, schema, samplingRatio=None):
     """
     # pylint: disable=protected-access
 
-    # Spark 2.0.0+
-    if hasattr(sqlc, "sparkSession"):
-        self = sqlc.sparkSession
+    self = sqlc.sparkSession
 
-        if isinstance(data, RDD):
-            rdd, schema = self._createFromRDD(data, schema, samplingRatio)
-        else:
-            rdd, schema = self._createFromLocal(data, schema)
-
-        jrdd = self._jvm.SerDeUtil.toJavaArray(rdd._to_java_object_rdd())
-        jdf = self._jsparkSession.applySchemaToPythonRDD(jrdd.rdd(), schema.json())
-        df = DataFrame(jdf, self._wrapped)
-        df._schema = schema
-        return df
-
+    if isinstance(data, RDD):
+        rdd, schema = self._createFromRDD(data, schema, samplingRatio)
     else:
-        return sqlc.createDataFrame(data, schema, samplingRatio=samplingRatio)
+        rdd, schema = self._createFromLocal(data, schema)
+
+    jrdd = self._jvm.SerDeUtil.toJavaArray(rdd._to_java_object_rdd())
+    jdf = self._jsparkSession.applySchemaToPythonRDD(jrdd.rdd(), schema.json())
+    df = DataFrame(jdf, self._wrapped)
+    df._schema = schema
+    return df
 
 
 def sql(sqlc, query, tables=None):

@@ -60,8 +60,9 @@ class MostExternallyLinkedPages(Plugin):
             lines_df.persist()
             print "Number of destination URLs: %s" % lines_df.count()
 
-        if self.args.get("coalesce"):
-            lines_df = lines_df.coalesce(int(self.args["coalesce"]))
+        coalesce = int(self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            lines_df = lines_df.coalesce(coalesce)
 
         lines_df.write.text(
             self.args["path"],
