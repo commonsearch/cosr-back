@@ -3,21 +3,10 @@ sudo: required
 services:
   - docker
 
-env:
-    global:
-        - DOCKER_VERSION=1.10.1-0~trusty
-
 before_install:
-
-  # list docker-engine versions
-  - apt-cache madison docker-engine
-
-  # upgrade docker-engine to specific version
-  - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y docker-engine=${DOCKER_VERSION}
 
   - docker ps
   - docker info
-  - docker version
 
   - docker pull commonsearch/local-elasticsearch
   - docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
