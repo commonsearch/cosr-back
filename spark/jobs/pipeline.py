@@ -99,7 +99,7 @@ class IndexJob(SparkJob):
                     .parallelize(partitions, len(partitions)) \
                     .flatMap(lambda partition: self.index_documents(ds, partition))
 
-                source_documents = sqlc.createDataFrame(rdd, document_schema)
+                source_documents = createDataFrame(sqlc, rdd, document_schema)
 
             #
             # At this point, we have a DataFrame with every document from this source.
