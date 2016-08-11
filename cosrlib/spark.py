@@ -181,6 +181,10 @@ class SparkJob(object):
 
         if self.args.stop_delay:
             try:
+                print
+                print "Spark job finished! You can still browse the UI " + \
+                      "for %s seconds, or do Ctrl-C to exit." % self.args.stop_delay
+                print
                 time.sleep(self.args.stop_delay)
             except KeyboardInterrupt:
                 pass

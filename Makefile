@@ -88,7 +88,13 @@ devindex: restart_services
 
 # Logins into a new container
 docker_shell:
-	# -v "$(PWD)/../gumbocy:/cosr/gumbocy:rw"
+	@# Check if a container is already using port 4040
+	@bash -c "if [ -z '`docker ps -q | xargs -n1 docker port | grep ':4040$$'`' ]; then make docker_shell_with_ports; else make docker_shell_no_ports; fi"
+
+docker_shell_with_ports:
+	docker run -p 4040:4040 -p 4041:4041 -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
+
+docker_shell_no_ports:
 	docker run -p 4040 -p 4041 -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
 
 # Logins into the same container again

@@ -1,3 +1,6 @@
+import os
+import shutil
+
 from pyspark.sql import types as SparkTypes
 
 from cosrlib.plugins import Plugin
@@ -14,6 +17,10 @@ class MostExternallyLinkedPages(Plugin):
             SparkTypes.StructField("href", SparkTypes.StringType(), nullable=False)
             # TODO: link text
         ])), nullable=True))
+
+        final_directory = self.args["path"]
+        if final_directory and os.path.isdir(final_directory):
+            shutil.rmtree(final_directory)
 
     def document_post_index(self, document, metadata):
         """ Filters a document post-indexing """
