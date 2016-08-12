@@ -3,24 +3,50 @@ sudo: required
 services:
   - docker
 
+cache:
+  timeout: 1000
+  directories:
+    - $HOME/.cache
+
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
+  - du -ch $HOME/.cache
+
 before_install:
 
   - docker ps
   - docker info
 
+  # Start the Elasticsearch service
   - docker pull commonsearch/local-elasticsearch
   - docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
 
-  # Docker cannot use the build cache after a pull anymore!
-  # This will make the build much slower until there is a practical workaround :(
-  # https://github.com/docker/docker/issues/20316
-  #
-  # - docker pull commonsearch/local-back
-  # - docker inspect commonsearch/local-back
-  # - docker history commonsearch/local-back
-  # - ./scripts/git-set-file-times
+  - ./scripts/git-set-file-times
 
-  - docker build -t commonsearch/local-back .
+  # Load Docker cache if any
+  # Please note: There is a different cache for each build matrix worker, depending on the env.
+  # Hopefully this can be removed soon. See: https://github.com/docker/docker/issues/20316
+  - if [ -f $HOME/.cache/docker/image.tgz ]; then
+    echo "Docker cache found, loading..." &&
+    sh -c "gunzip -c $HOME/.cache/docker/image.tgz | docker load" &&
+    docker history commonsearch/local-back;
+    fi
+  - export CACHED_DOCKER_HASH=`docker history -q commonsearch/local-back | head -n1`
+
+  # Rebuild the image, possibly using the cache
+  - make docker_build
+  - docker commonsearch/local-back
+  - export NEW_DOCKER_HASH=`docker history -q commonsearch/local-back | head -n1`
+  - 'echo "Cached Docker hash: $CACHED_DOCKER_HASH vs. New Docker hash: $NEW_DOCKER_HASH"'
+
+  # If the cache hash changed, save the docker image in the cache
+  - if [ "$NEW_DOCKER_HASH" != "$CACHED_DOCKER_HASH" ]; then
+    echo "Updating cache" &&
+    rm -rf $HOME/.cache/docker/* &&
+    sh -c "docker save commonsearch/local-back $(docker history -q commonsearch/local-back | tail -n +2 | grep -v \<missing\> | tr '\n' ' ') | gzip > $HOME/.cache/docker/image.tgz";
+    fi
+
+  # Make sure the networking to the container running Elasticsearch is OK
   - ps -ef
   - netstat -lpn
   - docker run commonsearch/local-back ip route show 0.0.0.0/0

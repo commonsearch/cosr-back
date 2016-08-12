@@ -204,3 +204,6 @@ RUN pip install -r /requirements.txt
 
 # Base directory
 RUN mkdir -p /cosr/back
+
+# Save the hash at the time the image was built
+ADD .dockerhash /cosr/.back-dockerhash

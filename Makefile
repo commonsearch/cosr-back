@@ -6,12 +6,17 @@ PWD := $(shell pwd)
 
 # Build local Docker images
 docker_build:
+	make docker_hash > .dockerhash
 	docker build -t commonsearch/local-back .
 
 # Pull Docker images from the registry
 docker_pull:
 	docker pull commonsearch/local-back
 	docker pull commonsearch/local-elasticsearch
+
+# Build a unique hash to indicate that a docker_build may be necessary again
+docker_hash:
+	@sh -c 'cat Dockerfile requirements.txt | grep -vE "^\s*\#" | grep -vE "^\s*$$" | md5'
 
 # Build a source distribution, to be sent to a Spark cluster
 build_source_export:
@@ -88,6 +93,9 @@ devindex: restart_services
 
 # Logins into a new container
 docker_shell:
+	@# Check if the hashes match
+	@bash -c 'docker run -v "$(PWD):/cosr/back:ro" -t commonsearch/local-back sh -c "if diff -q /cosr/.back-dockerhash /cosr/back/.dockerhash > /dev/null; then echo \"Docker image is up to date\"; else echo \"\nWARNING: Your Docker image seems to be out of date! Please exit and do \\\"make docker_build\\\" again to avoid any issues.\n\"; fi"'
+
 	@# Check if a container is already using port 4040
 	@bash -c "if [ -z '`docker ps -q | xargs -n1 docker port | grep ':4040$$'`' ]; then make docker_shell_with_ports; else make docker_shell_no_ports; fi"
 
