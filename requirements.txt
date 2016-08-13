@@ -75,3 +75,6 @@ protobuf==3.0.0b3
 
 # LRU cache implementation in C
 lru-dict==1.1.4
+
+# OAI-PMH client for the OAI document source
+pyoai==2.4.5
