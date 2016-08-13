@@ -16,7 +16,7 @@ docker_pull:
 
 # Build a unique hash to indicate that a docker_build may be necessary again
 docker_hash:
-	@sh -c 'cat Dockerfile requirements.txt | grep -vE "^\s*\#" | grep -vE "^\s*$$" | md5'
+	@sh -c 'cat Dockerfile requirements.txt | grep -vE "^\s*\#" | grep -vE "^\s*$$" | openssl md5'
 
 # Build a source distribution, to be sent to a Spark cluster
 build_source_export:
