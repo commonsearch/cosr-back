@@ -35,7 +35,7 @@ before_install:
 
   # Rebuild the image, possibly using the cache
   - make docker_build
-  - docker commonsearch/local-back
+  - docker history commonsearch/local-back
   - export NEW_DOCKER_HASH=`docker history -q commonsearch/local-back | head -n1`
   - 'echo "Cached Docker hash: $CACHED_DOCKER_HASH vs. New Docker hash: $NEW_DOCKER_HASH"'
 
