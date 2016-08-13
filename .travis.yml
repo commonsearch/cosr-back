@@ -26,6 +26,7 @@ before_install:
   # Load Docker cache if any
   # Please note: There is a different cache for each build matrix worker, depending on the env.
   # Hopefully this can be removed soon. See: https://github.com/docker/docker/issues/20316
+  - mkdir -p $HOME/.cache/docker/
   - if [ -f $HOME/.cache/docker/image.tgz ]; then
     echo "Docker cache found, loading..." &&
     sh -c "gunzip -c $HOME/.cache/docker/image.tgz | docker load" &&
