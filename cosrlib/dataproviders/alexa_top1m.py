@@ -1,7 +1,7 @@
-from . import BaseDataSource
+from . import BaseDataProvider
 
 
-class DataSource(BaseDataSource):
+class DataProvider(BaseDataProvider):
     """ Return the rank in the top 1 million domains from Alexa """
 
     dump_testdata = "tests/testdata/alexa-top1m.csv"

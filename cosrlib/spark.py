@@ -8,6 +8,7 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.rdd import RDD
 
 from cosrlib.config import config
+from cosrlib.plugins import Plugin
 
 
 def setup_spark_worker(*a, **kw):
@@ -204,3 +205,25 @@ class SparkJob(object):
         self.run_job(sc, sqlc)
 
         self.teardown_spark_context(sc, sqlc)
+
+
+class SparkPlugin(Plugin):
+
+    def save_dataframe(self, df, format):
+        """ Saves a dataframe with common options """
+
+        coalesce = int(self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            df = df.coalesce(coalesce)
+
+        if format == "text":
+            df.write.text(
+                self.args["path"],
+                compression="gzip" if self.args.get("gzip") else "none"
+            )
+
+        elif format == "parquet":
+            df.write.parquet(self.args["path"])
+
+        else:
+            raise Exception("Unknown format %s" % format)

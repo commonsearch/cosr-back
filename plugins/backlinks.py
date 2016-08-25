@@ -3,16 +3,13 @@ import shutil
 
 from pyspark.sql import types as SparkTypes
 
-from cosrlib.plugins import Plugin
-from cosrlib.spark import sql
+from cosrlib.spark import sql, SparkPlugin
 
 
-class MostExternallyLinkedPages(Plugin):
+class MostExternallyLinkedPages(SparkPlugin):
     """ Saves a list of most externally linked pages on a domain """
 
-    hooks = frozenset(["document_post_index", "spark_pipeline_action", "spark_pipeline_init"])
-
-    def spark_pipeline_init(self, sc, sqlc, schema, indexer):
+    def hook_spark_pipeline_init(self, sc, sqlc, schema, indexer):
         schema.append(SparkTypes.StructField("external_links", SparkTypes.ArrayType(SparkTypes.StructType([
             SparkTypes.StructField("href", SparkTypes.StringType(), nullable=False)
             # TODO: link text
@@ -22,14 +19,14 @@ class MostExternallyLinkedPages(Plugin):
         if final_directory and os.path.isdir(final_directory):
             shutil.rmtree(final_directory)
 
-    def document_post_index(self, document, metadata):
+    def hook_document_post_index(self, document, metadata):
         """ Filters a document post-indexing """
 
         metadata["external_links"] = [
             {"href": row["href"].url} for row in document.get_external_hyperlinks()
         ]
 
-    def spark_pipeline_action(self, sc, sqlc, df, indexer):
+    def hook_spark_pipeline_action(self, sc, sqlc, df, indexer):
 
         domain = self.args["domain"]
 
@@ -67,13 +64,6 @@ class MostExternallyLinkedPages(Plugin):
             lines_df.persist()
             print "Number of destination URLs: %s" % lines_df.count()
 
-        coalesce = int(self.args.get("coalesce", 1) or 0)
-        if coalesce > 0:
-            lines_df = lines_df.coalesce(coalesce)
-
-        lines_df.write.text(
-            self.args["path"],
-            compression="gzip" if self.args.get("gzip") else "none"
-        )
+        self.save_dataframe(lines_df, "text")
 
         return True

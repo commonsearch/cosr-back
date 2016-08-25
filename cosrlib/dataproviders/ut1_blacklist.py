@@ -5,10 +5,10 @@ import shutil
 
 from cosrlib.config import config
 from cosrlib.url import URL
-from . import BaseDataSource
+from . import BaseDataProvider
 
 
-class DataSource(BaseDataSource):
+class DataProvider(BaseDataProvider):
     """ Return the UT1 categories in which the URL belongs.
 
         https://dsi.ut-capitole.fr/blacklists/index_en.php

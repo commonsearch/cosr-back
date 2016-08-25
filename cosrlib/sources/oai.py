@@ -34,6 +34,8 @@ class OaiSource(Source):
     def iter_items(self, partition):
         """ Partition is an OAI-PMH endpoint """
 
+        # source = "oai:%s" % partition
+
         registry = MetadataRegistry()
         registry.registerReader('oai_dc', oai_dc_reader)
         client = Client(partition, registry)

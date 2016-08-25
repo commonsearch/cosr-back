@@ -24,8 +24,8 @@ class Source(Plugin):
         if plugins:
             self.filter_url_hooks = plugins.get("filter_url") or []
 
-    def filter_url(self, url):
-        """ Returns True if this URL is acceptable given the current filters """
+    def qualify_url(self, url):
+        """ Return (True, index_level) if this URL is acceptable given the current filters """
 
         do_parse, do_index, do_index_body = True, False, False
 

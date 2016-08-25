@@ -8,15 +8,17 @@ class UrlSource(Source):
     def get_partitions(self):
 
         if self.args.get("urls"):
-            return self.args["urls"]
+            return [{
+                "url": url
+            } for url in self.args["urls"]]
         else:
-            return [self.args["url"]]
+            return [{
+                "url": self.args["url"]
+            }]
 
     def iter_items(self, partition):
 
-        url = partition
-
-        fetched = requests.get(url, headers={'user-agent': 'CommonSearch/dev'})
+        fetched = requests.get(partition["url"], headers={'user-agent': 'CommonSearch/dev'})
 
         if fetched.status_code == 200:
-            yield url, fetched.headers, "html", 2, fetched.content
+            yield partition["url"], fetched.headers, "html", 2, fetched.content

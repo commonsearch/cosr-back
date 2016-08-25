@@ -10,25 +10,28 @@ class CorpusSource(Source):
     def get_partitions(self):
 
         if self.args.get("path"):
-            return [self.args["path"]]
+            return [{
+                "path": self.args["path"]
+            }]
         else:
-            return self.args.get("docs") or []
+            return [{
+                "doc": doc
+            } for doc in self.args.get("docs") or []]
 
     def iter_items(self, partition):
         """ Partition can be either a single raw document, or a filepath to a JSON file """
 
-        if isinstance(partition, dict):
-            docs = [partition]
-
-        else:
-            with open(partition, "r") as f:
+        if partition.get("path"):
+            with open(partition["path"], "r") as f:
                 docs = json.load(f)
+        else:
+            docs = [partition["doc"]]
 
         for doc in docs:
 
             url = URL(doc["url"].encode("utf-8"))
 
-            do_parse, index_level = self.filter_url(url)
+            do_parse, index_level = self.qualify_url(url)
 
             if do_parse:
 

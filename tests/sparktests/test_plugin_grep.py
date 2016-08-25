@@ -7,7 +7,6 @@ import os
 import ujson as json
 
 
-@pytest.mark.elasticsearch
 def test_spark_plugin_grep(sparksubmit):
 
     tmp_dir = tempfile.mkdtemp()

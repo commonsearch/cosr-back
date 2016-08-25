@@ -54,25 +54,29 @@ class HTMLDocument(Document):
 
         return self
 
-    def get_internal_hyperlinks(self):
+    def get_internal_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs to other domains found in the document """
         return [{
             "path": href,  # Unresolved raw path!
-            "words": self._split_words(words)
-        } for href, words in self.analysis["internal_hyperlinks"]]
+            "text": text.strip()
+        } for href, text, rel in self.analysis["internal_hyperlinks"]]
 
-    def get_external_hyperlinks(self):
+    def get_external_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs to other domains found in the document """
-        return self._format_hyperlinks(self.analysis["external_hyperlinks"])
+        return self._format_hyperlinks(
+            self.analysis["external_hyperlinks"],
+            exclude_nofollow=exclude_nofollow
+        )
 
-    def get_hyperlinks(self):
+    def get_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs found in the document """
         return self._format_hyperlinks(
             self.analysis["internal_hyperlinks"] +
-            self.analysis["external_hyperlinks"]
+            self.analysis["external_hyperlinks"],
+            exclude_nofollow=exclude_nofollow
         )
 
-    def _format_hyperlinks(self, links):
+    def _format_hyperlinks(self, links, exclude_nofollow=False):
         """ Formats a list of hyperlinks for return """
 
         if self.analysis.get("base_url"):
@@ -81,7 +85,7 @@ class HTMLDocument(Document):
             base_url = self.source_url
 
         hyperlinks = []
-        for href, words in links:
+        for href, text, rel in links:
             url = URL(base_url.urljoin(href), check_encoding=True)
 
             if (
@@ -91,13 +95,15 @@ class HTMLDocument(Document):
                     # Probably an html error
                     not href.startswith("<") and
 
+                    not (exclude_nofollow and rel == "nofollow") and
+
                     # This regex catches several things we don't want to follow:
                     # invalid hosts, TLDs, usernames, ..
                     _RE_VALID_NETLOC.match(url.parsed.netloc)
             ):
                 hyperlinks.append({
                     "href": url,
-                    "words": self._split_words(words)
+                    "text": text.strip()
                 })
 
         return hyperlinks

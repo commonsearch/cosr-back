@@ -112,15 +112,15 @@ class Document(object):
         """ Returns a list of words found in the URL """
         return self.get_domain_words() + self.get_path_words()
 
-    def get_hyperlinks(self):
+    def get_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs found in the document """
         return []
 
-    def get_external_hyperlinks(self):
+    def get_external_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs found in the document """
         return []
 
-    def get_internal_hyperlinks(self):
+    def get_internal_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs found in the document """
         return []
 

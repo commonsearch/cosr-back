@@ -27,29 +27,24 @@ A complete guide available in [INSTALL.md](INSTALL.md).
 
 ## Launching the tests
 
-Make sure to start the services (`make start_services`) before trying any tests.
-
-Inside Docker, you can run our full test suite easily:
+Before running the tests, you have to start Elasticsearch and other services they depend on:
 
 ```
-make test
-```
-
-Alternatively, you can run it from outside Docker with:
-
-```
+make start_services
 make docker_test
 ```
 
-You may also want to run only part of the tests, for instance all which do not use Elasticsearch:
+You may also want to run only part of the tests, for instance all which do not use Elasticsearch. To do that you should enter the container first:
 
 ```
+make docker_shell
 py.test tests/ -v -m "not elasticsearch"
 ```
 
 If you want to evaluate the speed of a component, for instance HTML parsing, you can repeat the tests N times and output a Python profile:
 
 ```
+make docker_shell
 py.test tests/cosrlibtests/document/html/ -v --repeat 50 --profile
 ```
 
@@ -57,6 +52,7 @@ py.test tests/cosrlibtests/document/html/ -v --repeat 50 --profile
 ## Launching an index job
 
 ```
+make docker_shell
 spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=1 --plugin plugins.filter.Homepages:index_body=1 --profile
 ```
 
@@ -67,6 +63,7 @@ After this, if you have a `cosr-front` instance connected to the same Elasticsea
 Common Search supports the insertion of user-provided plugins in the indexation pipeline. Some are included by default, for instance:
 
 ```
+make docker_shell
 spark-submit spark/jobs/pipeline.py --source url:https://about.commonsearch.org/ --plugin plugins.grep.Words:words=common search,path=/tmp/grep_result
 ```
 

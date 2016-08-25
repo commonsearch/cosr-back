@@ -24,8 +24,8 @@ def load_plugins(specs):
     for spec in (specs or []):
         if spec:
             plugin = load_plugin(*parse_plugin_cli_args(spec))
-            for hook in plugin.hooks:
-                hooks[hook].append((spec, getattr(plugin, hook)))
+            for hook in plugin.list_hooks():
+                hooks[hook].append((spec, getattr(plugin, "hook_%s" % hook)))
 
     return hooks
 
@@ -90,8 +90,6 @@ class PLUGIN_HOOK_ABORT(object):
 class Plugin(object):
     """ Base plugin class """
 
-    hooks = frozenset()
-
     def __init__(self, args):
         self.args = args
         self.init()
@@ -99,3 +97,8 @@ class Plugin(object):
     def init(self):
         """ Initialize the plugin """
         pass
+
+    def list_hooks(self):
+        for attr in dir(self):
+            if attr.startswith("hook_"):
+                yield attr[5:]

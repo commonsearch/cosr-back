@@ -18,25 +18,25 @@ from urlserver.protos import urlserver_pb2
 from urlserver.id_generator import make_url_id
 
 
-def list_datasources():
-    """ Returns a dict of all available datasources """
-    datasources = {}
+def list_dataproviders():
+    """ Returns a dict of all available data providers """
+    dataproviders = {}
 
-    datasource_dir = os.path.join(os.path.dirname(__file__))
-    for datasource in os.listdir(datasource_dir):
-        if not datasource.startswith("_") and datasource.endswith(".py"):
-            ds_name = datasource.replace(".py", "")
-            datasources[ds_name] = load_datasource(ds_name)
+    dataprovider_dir = os.path.join(os.path.dirname(__file__))
+    for dataprovider in os.listdir(dataprovider_dir):
+        if not dataprovider.startswith("_") and dataprovider.endswith(".py"):
+            name = dataprovider.replace(".py", "")
+            dataproviders[name] = load_dataprovider(name)
 
-    return datasources
-
-
-def load_datasource(name):
-    return importlib.import_module(".%s" % name, package="urlserver.datasources").DataSource(name)
+    return dataproviders
 
 
-class BaseDataSource(object):
-    """ Base DataSource class """
+def load_dataprovider(name):
+    return importlib.import_module(".%s" % name, package="cosrlib.dataproviders").DataProvider(name)
+
+
+class BaseDataProvider(object):
+    """ Base Data Provider class """
 
     dump_testdata = None
     dump_url = None

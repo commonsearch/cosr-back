@@ -20,15 +20,24 @@ class WebarchiveSource(Source):
         if self.args.get("list"):
 
             with open(self.args["list"], "rb") as f:
-                return [x.strip() for x in f.readlines()]
+                return [{
+                    "path": x.strip(),
+                    "source": "warc"
+                } for x in f.readlines()]
 
         # Direct list of .warc filepaths
         elif self.args.get("paths"):
-            return self.args["paths"]
+            return [{
+                "path": path,
+                "source": "warc"
+            } for path in self.args["paths"]]
 
         # Single .warc
         else:
-            return [self.args["path"]]
+            return [{
+                "path": self.args["path"],
+                "source": "warc"
+            }]
 
     def _warc_reader_from_file(self, filereader, filepath):
         """ Creates a WARC record iterator from a file reader """
@@ -48,7 +57,7 @@ class WebarchiveSource(Source):
     def iter_items(self, partition):
         """ Yields objects in the source's native format """
 
-        warc_stream = self.open_warc_stream(partition)
+        warc_stream = self.open_warc_stream(partition["path"])
 
         for record in warc_stream:
 
@@ -60,7 +69,7 @@ class WebarchiveSource(Source):
 
             url = URL(record.url, check_encoding=True)
 
-            do_parse, index_level = self.filter_url(url)
+            do_parse, index_level = self.qualify_url(url)
 
             if not do_parse:
                 continue

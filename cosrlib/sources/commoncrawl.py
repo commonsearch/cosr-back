@@ -34,7 +34,7 @@ def list_commoncrawl_warc_filenames(limit=None, skip=0, version=None):
 
     print "Using Common Crawl version %s with %d files" % (version, len(warc_files))
 
-    return warc_files[int(skip or 0):int(limit or len(warc_files)) + int(skip or 0)]
+    return warc_files[int(skip or 0):int(limit or len(warc_files)) + int(skip or 0)], version
 
 
 class CommoncrawlSource(WebarchiveSource):
@@ -43,11 +43,16 @@ class CommoncrawlSource(WebarchiveSource):
     def get_partitions(self):
         """ Returns a list of Common Crawl segments """
 
-        return list_commoncrawl_warc_filenames(
+        partitions, version = list_commoncrawl_warc_filenames(
             limit=self.args.get("limit"),
             skip=self.args.get("skip"),
             version=self.args.get("version")
         )
+
+        return [{
+            "partition": partition,
+            "source": "commoncrawl:%s" % version
+        } for partition in partitions]
 
     def open_warc_stream(self, filepath):
         """ Creates a WARC record iterator from the filepath given to the Source """

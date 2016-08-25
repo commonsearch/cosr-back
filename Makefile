@@ -92,10 +92,7 @@ devindex: restart_services
 #
 
 # Logins into a new container
-docker_shell:
-	@# Check if the hashes match
-	@bash -c 'docker run -v "$(PWD):/cosr/back:ro" -t commonsearch/local-back sh -c "if diff -q /cosr/.back-dockerhash /cosr/back/.dockerhash > /dev/null; then echo \"Docker image is up to date\"; else echo \"\nWARNING: Your Docker image seems to be out of date! Please exit and do \\\"make docker_build\\\" again to avoid any issues.\n\"; fi"'
-
+docker_shell: docker_check
 	@# Check if a container is already using port 4040
 	@bash -c "if [ -z '`docker ps -q | xargs -n1 docker port | grep ':4040$$'`' ]; then make docker_shell_with_ports; else make docker_shell_no_ports; fi"
 
@@ -117,6 +114,10 @@ docker_stop_all:
 docker_clean:
 	docker rm -v $$(docker ps -a -q -f status=exited) || true
 	docker rmi $$(docker images -aq) || true
+
+# Checks if the container is out of date
+docker_check:
+	@bash -c 'docker run -v "$(PWD):/cosr/back:ro" -t commonsearch/local-back sh -c "if diff -q /cosr/.back-dockerhash /cosr/back/.dockerhash > /dev/null; then echo \"Docker image is up to date\"; else echo \"\nWARNING: Your Docker image seems to be out of date! Please exit and do \\\"make docker_build\\\" again to avoid any issues.\n\"; fi"'
 
 start_local_elasticsearch:
 	# sudo ifconfig lo0 alias 10.0.2.2
@@ -142,12 +143,12 @@ restart_services: stop_services start_services
 # Reindex 1 WARC file from Common Crawl
 reindex1:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=1 --profile
+	spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=1 --plugin plugins.filter.All:index_body=1 --profile
 
 # Reindex 10 WARC files from Common Crawl
 reindex10:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=10 --profile
+	spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=10 --plugin plugins.filter.All:index_body=1 --profile
 
 # Do a standard reindex
 reindex_standard:
