@@ -203,10 +203,10 @@ docker_test_coverage:
 	docker run -e TRAVIS -e TRAVIS_BRANCH -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
 
 pylint:
-	PYTHONPATH=. pylint cosrlib urlserver spark explainer plugins
+	PYTHONPATH=. pylint -j 0 cosrlib urlserver spark explainer plugins
 
 docker_pylint:
 	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make pylint
 
 todo:
-	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver spark explainer plugins
+	PYTHONPATH=. pylint -j 0 --disable=all --enable=fixme cosrlib urlserver spark explainer plugins

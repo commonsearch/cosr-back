@@ -209,21 +209,21 @@ class SparkJob(object):
 
 class SparkPlugin(Plugin):
 
-    def save_dataframe(self, df, format):
+    def save_dataframe(self, df, fileformat):
         """ Saves a dataframe with common options """
 
         coalesce = int(self.args.get("coalesce", 1) or 0)
         if coalesce > 0:
             df = df.coalesce(coalesce)
 
-        if format == "text":
+        if fileformat == "text":
             df.write.text(
                 self.args["path"],
                 compression="gzip" if self.args.get("gzip") else "none"
             )
 
-        elif format == "parquet":
+        elif fileformat == "parquet":
             df.write.parquet(self.args["path"])
 
         else:
-            raise Exception("Unknown format %s" % format)
+            raise Exception("Unknown format %s" % fileformat)

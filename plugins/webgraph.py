@@ -21,17 +21,20 @@ class WebGraphPlugin(SparkPlugin):
     def hook_spark_pipeline_init(self, sc, sqlc, schema, indexer):
 
         if self.include_external:
-            schema.append(SparkTypes.StructField("external_links", SparkTypes.ArrayType(SparkTypes.StructType([
-                SparkTypes.StructField("href", SparkTypes.StringType(), nullable=False),
-                SparkTypes.StructField("text", SparkTypes.StringType(), nullable=True)
-
-            ])), nullable=True))
+            schema.append(
+                SparkTypes.StructField("external_links", SparkTypes.ArrayType(SparkTypes.StructType([
+                    SparkTypes.StructField("href", SparkTypes.StringType(), nullable=False),
+                    SparkTypes.StructField("text", SparkTypes.StringType(), nullable=True)
+                ])), nullable=True)
+            )
 
         if self.include_internal:
-            schema.append(SparkTypes.StructField("internal_links", SparkTypes.ArrayType(SparkTypes.StructType([
-                SparkTypes.StructField("path", SparkTypes.StringType(), nullable=False),
-                SparkTypes.StructField("text", SparkTypes.StringType(), nullable=True)
-            ])), nullable=True))
+            schema.append(
+                SparkTypes.StructField("internal_links", SparkTypes.ArrayType(SparkTypes.StructType([
+                    SparkTypes.StructField("path", SparkTypes.StringType(), nullable=False),
+                    SparkTypes.StructField("text", SparkTypes.StringType(), nullable=True)
+                ])), nullable=True)
+            )
 
     def hook_document_post_index(self, document, metadata):
         """ Collect all unique normalized external URLs """

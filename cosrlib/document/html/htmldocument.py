@@ -56,10 +56,14 @@ class HTMLDocument(Document):
 
     def get_internal_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs to other domains found in the document """
-        return [{
-            "path": href,  # Unresolved raw path!
-            "text": text.strip()
-        } for href, text, rel in self.analysis["internal_hyperlinks"]]
+        return [
+            {
+                "path": href,  # Unresolved raw path!
+                "text": text.strip()
+            }
+            for href, text, rel in self.analysis["internal_hyperlinks"]
+            if not (exclude_nofollow and rel == "nofollow")
+        ]
 
     def get_external_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs to other domains found in the document """
