@@ -166,7 +166,7 @@ pagerank_standard:
 
 dump_standard:
 	rm -rf ./out/
-	spark-submit --verbose spark/jobs/pipeline.py --stop_delay 600 --source commoncrawl:limit=100,maxdocs=1000 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata,abort=1 --plugin plugins.webgraph.DomainToDomainParquet
+	spark-submit --verbose spark/jobs/pipeline.py --stop_delay 600 --source commoncrawl:limit=100,maxdocs=1000 --plugin plugins.dump.DocumentMetadata:format=parquet,path=./out/metadata,abort=1 --plugin plugins.webgraph.DomainToDomainParquet
 
 viewdump_standard:
 	hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json ./out/metadata/

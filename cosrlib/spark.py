@@ -222,6 +222,12 @@ class SparkPlugin(Plugin):
                 compression="gzip" if self.args.get("gzip") else "none"
             )
 
+        elif fileformat == "json":
+            df.write.json(
+                self.args["path"],
+                compression="gzip" if self.args.get("gzip") else "none"
+            )
+
         elif fileformat == "parquet":
             df.write.parquet(self.args["path"])
 

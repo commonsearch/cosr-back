@@ -27,5 +27,5 @@ class WikidataSource(Source):
             yield doc
 
             i += 1
-            if i > maxdocs > 0:
+            if i >= maxdocs > 0:
                 return

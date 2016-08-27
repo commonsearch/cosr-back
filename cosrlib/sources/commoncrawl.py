@@ -50,7 +50,7 @@ class CommoncrawlSource(WebarchiveSource):
         )
 
         return [{
-            "partition": partition,
+            "path": partition,
             "source": "commoncrawl:%s" % version
         } for partition in partitions]
 

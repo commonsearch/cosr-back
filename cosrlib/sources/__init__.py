@@ -16,6 +16,9 @@ def load_source(source_name, args, **kwargs):
 class Source(Plugin):
     """ Base Source class, yields Documents """
 
+    # Does this source return already parsed documents?
+    already_parsed = False
+
     def __init__(self, args, plugins=None):
 
         Plugin.__init__(self, args)
@@ -75,7 +78,7 @@ class Source(Plugin):
             yield document
 
             i += 1
-            if i > maxdocs > 0:
+            if i >= maxdocs > 0:
                 return
 
     def iter_all_documents(self):
