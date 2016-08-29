@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 
 import rocksdb
@@ -31,7 +33,7 @@ class Storage(object):
                     read_only=True
                 )
             else:
-                print "WARNING: RocksDB data not found (%s). Run make import_local_data" % self._db_dir
+                print("WARNING: RocksDB data not found (%s). Run make import_local_data" % self._db_dir)
         else:
             self.db = rocksdb.DB(self._db_dir, rocksdb.Options(create_if_missing=True), read_only=False)
 

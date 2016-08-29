@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import sys
 import shutil
@@ -85,7 +87,7 @@ class PageRankJob(SparkJob):
         tmpdir = directory or self.args.tmpdir
 
         if not tmpdir:
-            print "No tmpdir configured! Will probably run out of memory."
+            print("No tmpdir configured! Will probably run out of memory.")
             return
 
         # Local filepath
@@ -103,7 +105,7 @@ class PageRankJob(SparkJob):
                 try:
                     bucket.delete_keys(delete_key_list)
                 except Exception, e:  # pylint: disable=broad-except
-                    print "Exception when cleaning tmpdir: %s" % e
+                    print("Exception when cleaning tmpdir: %s" % e)
 
         # TODO
         elif tmpdir.startswith("hdfs://"):
@@ -118,11 +120,12 @@ class PageRankJob(SparkJob):
             _success = os.path.join(parsed.path, "_SUCCESS")
 
             while not bucket.get_key(_success):
-                print "Waiting for %s ..." % _success
+                print("Waiting for %s ..." % _success)
                 time.sleep(10)
 
     def custom_pagerank(self, sc, sqlc):
         """ Our own PageRank implementation, based on Spark SQL and Pregel-like behaviour """
+        # pylint: disable=too-many-statements
 
         # sc.setCheckpointDir("/tmp/spark-checkpoints")
 
@@ -141,7 +144,7 @@ class PageRankJob(SparkJob):
         edge_df.persist(StorageLevel.MEMORY_AND_DISK)
         vertex_df.persist(StorageLevel.MEMORY_AND_DISK)
 
-        print "Starting iterations. %s edges, %s vertices." % (edge_df.count(), vertex_df.count())
+        print("Starting iterations. %s edges, %s vertices." % (edge_df.count(), vertex_df.count()))
 
         # TODO: bootstrap with previous pageranks to accelerate convergence?
         ranks_df = sql(sqlc, """
@@ -151,7 +154,8 @@ class PageRankJob(SparkJob):
             GROUP BY vertices.id
         """, {"vertices": vertex_df, "edges": edge_df})
 
-        # TODO: optimize further by taking out outDegree=0 vertices and computing their pagerank as a post-filter.
+        # TODO: optimize further by taking out outDegree=0 vertices and computing their pagerank
+        # as a post-filter.
         # LEFT OUTER JOIN edges edges_src on edges_src.src  = vertices.id
         # WHERE edges_src.src IS NOT NULL
 
@@ -192,11 +196,11 @@ class PageRankJob(SparkJob):
 
                 stats = stats_df.collect()[0]
 
-                print "Iteration %s, %s changed ranks" % (iteration, stats["count_diff"])
-                print "Stats: %s" % repr(stats)
+                print("Iteration %s, %s changed ranks" % (iteration, stats["count_diff"]))
+                print("Stats: %s" % repr(stats))
 
                 if (stats["count_diff"] == 0) or (stats["max_diff"] <= self.args.tol):
-                    print "Max diff was below tolerance: stopping iterations!"
+                    print("Max diff was below tolerance: stopping iterations!")
                     break
 
                 if self.args.top_diffs > 0:
@@ -212,11 +216,11 @@ class PageRankJob(SparkJob):
                         ORDER BY abs(rank_new - rank_old) DESC
                     """, {"changes": changed_ranks_df, "names": vertex_df})
 
-                    print "Top %s diffs" % self.args.top_changes
-                    print "\n".join([
+                    print("Top %s diffs" % self.args.top_changes)
+                    print("\n".join([
                         "%3.3f (%3.3f => %3.3f) %s " % x
                         for x in top_changes_df.limit(self.args.top_diffs).collect()
-                    ])
+                    ]))
 
                     top_changes_df.unpersist()
 
@@ -232,7 +236,7 @@ class PageRankJob(SparkJob):
 
                 new_ranks_df.count()  # Materialize the RDD
 
-                print "Iteration %s cached" % (iteration, )
+                print("Iteration %s cached" % (iteration, ))
 
                 ranks_df.unpersist()
                 changed_ranks_df.unpersist()
@@ -242,7 +246,7 @@ class PageRankJob(SparkJob):
             # Writing & loading Parquet seems to be more efficient than checkpointing the RDD.
             else:
 
-                print "Iteration %s, saving to parquet" % iteration
+                print("Iteration %s, saving to parquet" % iteration)
 
                 iteration_tmpdir_previous = iteration_tmpdir
                 iteration_tmpdir = os.path.join(self.args.tmpdir, "iter_%s" % iteration)
@@ -289,7 +293,7 @@ class PageRankJob(SparkJob):
             )
 
         else:
-            print final_df.rdd.collect()
+            print(final_df.rdd.collect())
 
     def custom_pagerank_2(self, sc, sqlc):
         """ Alternative PageRank implementation, with fixed number of steps """
@@ -321,7 +325,7 @@ class PageRankJob(SparkJob):
 
         edge_df.persist()
         vertex_df.persist()
-        print "Starting iterations. %s edges, %s vertices." % (edge_df.count(), vertex_df.count())
+        print("Starting iterations. %s edges, %s vertices." % (edge_df.count(), vertex_df.count()))
 
         iteration_tmpdir = None
 
@@ -368,11 +372,11 @@ class PageRankJob(SparkJob):
                 """, {"old_ranks": ranks_df, "new_ranks": new_ranks_df})
 
                 stats = stats_df.collect()[0]
-                print "Max diff at iteration %s : %s" % (iteration, stats["max_diff"])
-                print "Other stats: %s" % repr(stats)
+                print("Max diff at iteration %s : %s" % (iteration, stats["max_diff"]))
+                print("Other stats: %s" % repr(stats))
 
                 if (stats["count_diff"] == 0) or (stats["max_diff"] <= self.args.tol):
-                    print "Max diff was below tolerance: stopping iterations!"
+                    print("Max diff was below tolerance: stopping iterations!")
                     break
 
                 top_diffs_df = sql(sqlc, """
@@ -388,8 +392,8 @@ class PageRankJob(SparkJob):
                     ORDER BY ABS(diff) DESC
                 """, {"old_ranks": ranks_df, "new_ranks": new_ranks_df, "names": vertex_df})
 
-                print "Top 100 diffs"
-                print "\n".join(["%3.3f %3.3f %3.3f %s " % x for x in top_diffs_df.limit(100).collect()])
+                print("Top 100 diffs")
+                print("\n".join(["%3.3f %3.3f %3.3f %s " % x for x in top_diffs_df.limit(100).collect()]))
 
             new_ranks_df.write.parquet(iteration_tmpdir)
 
@@ -423,7 +427,7 @@ class PageRankJob(SparkJob):
             )
 
         else:
-            print final_df.rdd.collect()
+            print(final_df.rdd.collect())
 
     def graphframes_pagerank(self, sc, sqlc):
         """ GraphFrame's PageRank implementation """
@@ -451,7 +455,7 @@ class PageRankJob(SparkJob):
             )
 
         else:
-            print final_df.rdd.collect()
+            print(final_df.rdd.collect())
 
 if __name__ == "__main__":
     job = PageRankJob()

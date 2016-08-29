@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 # https://www.elastic.co/guide/en/elasticsearch/guide/current/changing-similarities.html
 ES_SIMILARITIES = {
     "title_bm25": {

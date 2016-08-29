@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import unicodedata
 from cosrlib import re
 
@@ -82,10 +84,10 @@ def format_title(document, url_metadata):  # pylint: disable=unused-argument
     if not is_ascii:
         utitle = title.decode('utf8')
         utitle = [t for t in utitle if 'Cn' not in unicodedata.category(t)]
-        title = ''.join(utitle).encode('utf8')
+        title = u''.join(utitle).encode('utf8')  # pylint: disable=redefined-variable-type
 
     tokens = _RE_WHITESPLACE.split(title.strip())
-    cleaned = " ".join(tokens)
+    cleaned = b" ".join(tokens)
 
     return unicode_truncate(cleaned, TITLE_MAX_LENGTH, keep_words=True)
 
@@ -133,7 +135,7 @@ def format_summary(document, url_metadata):  # pylint: disable=unused-argument
         return ""
 
     tokens = _RE_WHITESPLACE.split(summary.strip())
-    cleaned = " ".join(tokens)
+    cleaned = b" ".join(tokens)
 
     return unicode_truncate(cleaned, SUMMARY_MAX_LENGTH, keep_words=True)
 

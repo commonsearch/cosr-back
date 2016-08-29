@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import sys
 import time
@@ -16,9 +18,9 @@ for dataprovider in to_import:
     ds = dataproviders[dataprovider]
 
     start_time = time.time()
-    print "Importing %s..." % dataprovider
+    print("Importing %s..." % dataprovider)
 
     ds.import_dump()
 
-    print "Import of %s finished. Took %ss" % (dataprovider, int(time.time() - start_time))
-    print
+    print("Import of %s finished. Took %ss" % (dataprovider, int(time.time() - start_time)))
+    print()

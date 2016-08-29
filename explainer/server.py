@@ -1,4 +1,6 @@
 # pylint: disable=wrong-import-order
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from gevent.wsgi import WSGIServer
 from flask import Flask, request, render_template
 
@@ -106,7 +108,7 @@ def debug_url():
 def main():
     if config["ENV"] == "local":
         app.debug = True
-    print "Explainer listening on http://%s" % config["EXPLAINER"]
+    print("Explainer listening on http://%s" % config["EXPLAINER"])
     sys.stdout.flush()
     http_server = WSGIServer((config["EXPLAINER"].split(":")[0], int(config["EXPLAINER"].split(":")[1])), app)
     http_server.serve_forever()

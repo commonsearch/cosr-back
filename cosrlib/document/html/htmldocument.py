@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import urlparse
 
 from cosrlib import re
@@ -59,9 +61,9 @@ class HTMLDocument(Document):
         return [
             {
                 "path": href,  # Unresolved raw path!
-                "text": text.strip()
+                "text": txt.strip()
             }
-            for href, text, rel in self.analysis["internal_hyperlinks"]
+            for href, txt, rel in self.analysis["internal_hyperlinks"]
             if not (exclude_nofollow and rel == "nofollow")
         ]
 
@@ -89,15 +91,15 @@ class HTMLDocument(Document):
             base_url = self.source_url
 
         hyperlinks = []
-        for href, text, rel in links:
+        for href, txt, rel in links:
             url = URL(base_url.urljoin(href), check_encoding=True)
 
             if (
                     # Probably a forgotten mailto:
-                    "@" not in url.parsed.path and
+                    b"@" not in url.parsed.path and
 
                     # Probably an html error
-                    not href.startswith("<") and
+                    not href.startswith(b"<") and
 
                     not (exclude_nofollow and rel == "nofollow") and
 
@@ -107,7 +109,7 @@ class HTMLDocument(Document):
             ):
                 hyperlinks.append({
                     "href": url,
-                    "text": text.strip()
+                    "text": txt.strip()
                 })
 
         return hyperlinks

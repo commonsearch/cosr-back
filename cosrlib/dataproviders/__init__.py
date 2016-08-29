@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import csv
 import zipfile
 import StringIO
@@ -98,16 +100,16 @@ class BaseDataProvider(object):
                         3600.0 * done / (time.time() - batch_time)
                     )
 
-                print "Done %s (%s/s, ~%0.2f%%, ETA %0.2fh)" % (
+                print("Done %s (%s/s, ~%0.2f%%, ETA %0.2fh)" % (
                     done,
                     int(done / (time.time() - batch_time)),
                     (float(done * 100) / self.dump_count_estimate) if self.dump_count_estimate else 0,
                     eta
-                )
+                ))
                 write_batch = db.write_batch(write_batch)
                 batch_time = time.time()
 
-        print "Total rows: %s" % done
+        print("Total rows: %s" % done)
         db.write_batch(write_batch)
         db.close()
 
@@ -120,11 +122,11 @@ class BaseDataProvider(object):
             reader = csv.reader(f)
 
         elif self.dump_format == "tsv":
-            reader = csv.reader(f, delimiter="\t")
+            reader = csv.reader(f, delimiter=b"\t")
 
         elif self.dump_format == "xml":
-            reader = ElementTree.iterparse(f, events=("start", "end"))
-            _, self.xml_root = reader.next()
+            reader = ElementTree.iterparse(f, events=(b"start", b"end"))
+            _, self.xml_root = next(reader)
 
         elif self.dump_format == "json-lines":
             def _reader():

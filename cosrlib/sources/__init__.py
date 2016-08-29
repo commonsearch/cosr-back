@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from cosrlib.document import load_document_type
 from cosrlib.plugins import Plugin, load_plugin
 

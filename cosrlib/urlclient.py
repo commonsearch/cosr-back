@@ -1,8 +1,11 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from mprpc import RPCClient
 
 from urlserver.protos import urlserver_pb2
 from .config import config
 from .url import URL
+from . import py2_xrange
 
 
 class URLClientRemote(object):
@@ -79,7 +82,7 @@ class URLClientRemote(object):
         res = self._rpc("get_metadata", urls_variations)
         ret = []
 
-        for url_i in xrange(len(res) / 4):
+        for url_i in py2_xrange(len(res) // 4):
 
             url_metadata = {}
             for i, key in ((0, "url"), (1, "url_without_query"), (2, "domain"), (3, "pld")):

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import sys
 
@@ -12,7 +14,6 @@ from pyspark.sql import types as SparkTypes
 from pyspark.storagelevel import StorageLevel
 
 from cosrlib.sources import load_source
-from cosrlib.sources.commoncrawl import list_commoncrawl_warc_filenames
 from cosrlib.indexer import Indexer
 from cosrlib.utils import ignore_exceptions_generator  # ignore_exceptions
 from cosrlib.config import config
@@ -74,22 +75,11 @@ class IndexJob(SparkJob):
 
             ds = load_source(source_name, source_args, plugins=self.plugins)
 
-            if ds.already_parsed:
+            source_documents, needs_execution = self.get_indexed_documents_from_source(
+                sc, sqlc, document_schema, ds
+            )
 
-                # Some sources return already parsed documents
-                source_documents = ds.get_documents(sqlc)
-
-            else:
-
-                partitions = ds.get_partitions()
-
-                executed_pipeline = False
-
-                rdd = sc \
-                    .parallelize(partitions, len(partitions)) \
-                    .flatMap(lambda partition: self.index_documents(ds, partition))
-
-                source_documents = createDataFrame(sqlc, rdd, document_schema)
+            executed_pipeline = executed_pipeline and (not needs_execution)
 
             #
             # At this point, we have a DataFrame with every document from this source.
@@ -101,9 +91,9 @@ class IndexJob(SparkJob):
             # The count() here will execute the pipeline so far to allow for sources to be done sequentially
             if source_args.get("block") == "1":
                 executed_pipeline = True
-                print "Source %s done, indexed %s documents (%s total so far)" % (
+                print("Source %s done, indexed %s documents (%s total so far)" % (
                     source_name, source_documents.rdd.count(), self.accumulator_indexed.value
-                )
+                ))
 
             if all_documents is None:
                 all_documents = source_documents
@@ -124,14 +114,34 @@ class IndexJob(SparkJob):
             executed_pipeline = True
 
         if not executed_pipeline:
-            print "Total documents: %s" % all_documents.rdd.count()
+            print("Total documents: %s" % all_documents.rdd.count())
+
+    def get_indexed_documents_from_source(self, sc, sqlc, document_schema, source):
+        """ Returns indexed documents from a source """
+
+        if source.already_parsed:
+
+            # Some sources return already parsed documents
+            return source.get_documents(sqlc), False
+
+        else:
+
+            partitions = source.get_partitions()
+
+            rdd = sc \
+                .parallelize(partitions, len(partitions)) \
+                .flatMap(lambda partition: self.index_documents(source, partition))
+
+            source_documents = createDataFrame(sqlc, rdd, document_schema)
+
+            return source_documents, True
 
     def index_from_source(self, source, partition, _indexer, **kwargs):
         """ Indexes all documents from a source """
 
         for document in source.iter_documents(partition):
 
-            print "Indexing", document.source_url.url
+            print("Indexing", document.source_url.url)
 
             metadata = {}
 
@@ -151,7 +161,7 @@ class IndexJob(SparkJob):
 
         indexer.connect()
 
-        print "Now working on %s" % documentsource
+        print("Now working on %s" % documentsource)
 
         for resp in self.index_from_source(documentsource, partition, indexer):
             self.accumulator_indexed += 1

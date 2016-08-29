@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import mmh3
 from lru import LRU  # pylint: disable=no-name-in-module
 from cosrlib.url import tld_extract

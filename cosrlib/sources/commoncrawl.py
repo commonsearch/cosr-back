@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import gzip
 import StringIO
@@ -32,7 +34,7 @@ def list_commoncrawl_warc_filenames(limit=None, skip=0, version=None):
         data = gzip.GzipFile(fileobj=StringIO.StringIO(r.content), mode="rb").read()
         warc_files = [x.strip() for x in data.split("\n") if x.strip()]
 
-    print "Using Common Crawl version %s with %d files" % (version, len(warc_files))
+    print("Using Common Crawl version %s with %d files" % (version, len(warc_files)))
 
     return warc_files[int(skip or 0):int(limit or len(warc_files)) + int(skip or 0)], version
 

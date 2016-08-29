@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from cosrlib.sources import Source
 from cosrlib.document import Document
 from cosrlib.dataproviders import load_dataprovider
@@ -19,7 +21,7 @@ class WikidataSource(Source):
 
         for key, _ in dataprovider.iter_rows():
 
-            doc = Document(None, url="http://%s" % key)  # TODO get the original URL instead?
+            doc = Document(None, url=b"http://%s" % key)  # TODO get the original URL instead?
 
             # Summary & title will be inferred from the Wikidata *dataprovider* via url_metadata
             # doc._title = values["wikidata_title"]

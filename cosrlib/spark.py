@@ -1,3 +1,6 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+from builtins import range as py3_range
+
 import os
 import argparse
 import time
@@ -20,7 +23,7 @@ def setup_spark_worker(*a, **kw):
             from pytest_cov.embed import init
             cov = init()
             __builtins__["_cosr_pyspark_coverage"] = cov
-            print "Coverage started for PID", os.getpid()
+            print("Coverage started for PID", os.getpid())
 
         __builtins__["_cosr_pyspark_setup_done"] = True
 
@@ -28,7 +31,7 @@ def setup_spark_worker(*a, **kw):
 def teardown_spark_worker(*a, **kw):
     """ Used in tests, runs in each worker when the task is finished """
     if "_cosr_pyspark_coverage" in __builtins__:
-        print "Coverage stop for PID", os.getpid()
+        print("Coverage stop for PID", os.getpid())
         cov = __builtins__["_cosr_pyspark_coverage"]
         cov.stop()
         cov.save()
@@ -58,7 +61,7 @@ def createDataFrame(sqlc, data, schema, samplingRatio=None):
 def sql(sqlc, query, tables=None):
     """ Helper that runs a Spark SQL query with a list of temporary tables """
 
-    for key, df in (tables or {}).iteritems():
+    for key, df in (tables or {}).items():
         sqlc.registerDataFrameAsTable(df, key)
 
     ret = sqlc.sql(query)
@@ -168,24 +171,24 @@ class SparkJob(object):
         sqlc = SQLContext(sc)
 
         if config["ENV"] != "prod":
-            sc.parallelize(range(4), 4).foreach(setup_spark_worker)
+            sc.parallelize(py3_range(4), 4).foreach(setup_spark_worker)
 
         return sc, sqlc
 
     def teardown_spark_context(self, sc, sqlc):
 
         if config["ENV"] != "prod":
-            sc.parallelize(range(4), 4).foreach(teardown_spark_worker)
+            sc.parallelize(py3_range(4), 4).foreach(teardown_spark_worker)
 
         if self.args.profile:
             sc.show_profiles()
 
         if self.args.stop_delay:
             try:
-                print
-                print "Spark job finished! You can still browse the UI " + \
-                      "for %s seconds, or do Ctrl-C to exit." % self.args.stop_delay
-                print
+                print()
+                print("Spark job finished! You can still browse the UI " + \
+                      "for %s seconds, or do Ctrl-C to exit." % self.args.stop_delay)
+                print()
                 time.sleep(self.args.stop_delay)
             except KeyboardInterrupt:
                 pass

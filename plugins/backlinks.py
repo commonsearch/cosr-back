@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import shutil
 
@@ -62,7 +64,7 @@ class MostExternallyLinkedPages(SparkPlugin):
         if self.args.get("partitions"):
             lines_df = lines_df.coalesce(int(self.args["partitions"]))
             lines_df.persist()
-            print "Number of destination URLs: %s" % lines_df.count()
+            print("Number of destination URLs: %s" % lines_df.count())
 
         self.save_dataframe(lines_df, "text")
 

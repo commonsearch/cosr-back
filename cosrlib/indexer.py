@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from .document.html import HTMLDocument
 from .ranker import Ranker
 from .urlclient import URLClient

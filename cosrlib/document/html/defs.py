@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 # Which attributes we extract (with gumbocy) from the HTML.
 # All the others are ignored

@@ -1,11 +1,14 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import shutil
+import sys
 
 from pyspark.sql import types as SparkTypes
 
 from cosrlib.url import URL
 from cosrlib.spark import createDataFrame, sql, SparkPlugin
-from cosrlib import re
+from cosrlib import re, py2_long
 from urlserver.id_generator import _fast_make_domain_id
 
 
@@ -147,7 +150,7 @@ class DomainToDomainParquet(WebGraphPlugin):
             except Exception:  # pylint: disable=broad-except
                 return []
 
-            return [(long(_id), str(name))]
+            return [(py2_long(_id), str(name))]
 
         rdd_domains = all_domains_df.rdd.flatMap(iter_domain)
 
@@ -200,7 +203,7 @@ class DomainToDomainParquet(WebGraphPlugin):
             if from_domain == to_domain:
                 return []
             else:
-                return [(long(from_domain), long(to_domain))]
+                return [(py2_long(from_domain), py2_long(to_domain))]
 
         rdd_couples = new_df.rdd.flatMap(iter_links_domain)
 

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from pyspark.sql import types as SparkTypes
 from cosrlib.spark import sql, SparkPlugin
 
@@ -25,7 +27,7 @@ class Words(SparkPlugin):
 
         match = doc_words.intersection(self.words)
         if len(match) > 0:
-            print "WORD MATCH", match, document.source_url.url
+            print("WORD MATCH", match, document.source_url.url)
             metadata["grep_words"] = list(match)
 
     def hook_spark_pipeline_action(self, sc, sqlc, df, indexer):

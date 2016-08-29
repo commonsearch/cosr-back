@@ -204,6 +204,7 @@ docker_test_coverage:
 
 pylint:
 	PYTHONPATH=. pylint -j 0 cosrlib urlserver spark explainer plugins
+	PYTHONPATH=. pylint --py3k -j 0 cosrlib urlserver spark explainer plugins
 
 docker_pylint:
 	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make pylint

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import tempfile
 from collections import defaultdict
@@ -54,7 +56,7 @@ class DataProvider(BaseDataProvider):
                                 data[url].append(fp)
                                 cnt += 1
 
-                print "Done %s (%s entries)" % (fp, cnt)
+                print("Done %s (%s entries)" % (fp, cnt))
 
         if clean:
             shutil.rmtree(os.path.dirname(extract_dir))
