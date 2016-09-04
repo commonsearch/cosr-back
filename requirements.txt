@@ -68,7 +68,7 @@ gevent==1.1.1
 Flask==0.11.1
 
 # Used for URLServer data storage & exchange
-protobuf==3.0.0b3
+protobuf==3.0.0
 
 # Performance-focused replacement for urlparse
 -e git+git://github.com/commonsearch/urlparse4.git@fda910309aa189d57473dbb12e2d2acde49c1736#egg=urlparse4

@@ -98,11 +98,12 @@ RUN mkdir -p /tmp/re2 && \
 # Install Protocol Buffers
 #
 
-ENV PROTOBUF_VERSION 3.0.0-beta-3.1
-RUN wget https://codeload.github.com/google/protobuf/tar.gz/v${PROTOBUF_VERSION} && \
-  tar zxf v${PROTOBUF_VERSION} && cd protobuf-${PROTOBUF_VERSION} && \
+# v3.0.0 doesn't build anymore - see https://github.com/google/protobuf/commit/1760feb621a913189b90fe8595fffb74bce84598
+ENV PROTOBUF_VERSION a098e809336c5fbad7a8ff8f1210e5e0ac8d29b2
+RUN curl -sL https://github.com/google/protobuf/archive/${PROTOBUF_VERSION}.tar.gz | tar zx && \
+  cd protobuf-${PROTOBUF_VERSION} && \
   ./autogen.sh && ./configure && make && make install && ldconfig && \
-  cd .. && rm -rf protobuf-${PROTOBUF_VERSION} v${PROTOBUF_VERSION}
+  cd .. && rm -rf protobuf-${PROTOBUF_VERSION}
 
 
 # Oracle JDK is recommended in some places versus Open JDK so it may be interesting to
