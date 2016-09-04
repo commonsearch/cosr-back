@@ -1,5 +1,4 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-from builtins import range as py3_range
 
 import os
 import argparse
@@ -171,14 +170,14 @@ class SparkJob(object):
         sqlc = SQLContext(sc)
 
         if config["ENV"] != "prod":
-            sc.parallelize(py3_range(4), 4).foreach(setup_spark_worker)
+            sc.parallelize(list(range(4)), 4).foreach(setup_spark_worker)
 
         return sc, sqlc
 
     def teardown_spark_context(self, sc, sqlc):
 
         if config["ENV"] != "prod":
-            sc.parallelize(py3_range(4), 4).foreach(teardown_spark_worker)
+            sc.parallelize(list(range(4)), 4).foreach(teardown_spark_worker)
 
         if self.args.profile:
             sc.show_profiles()

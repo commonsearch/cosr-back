@@ -159,7 +159,7 @@ reindex_standard:
 
 pagerank_standard:
 	rm -rf ./out/pagerank/
-	spark-submit --executor-memory 1G --driver-memory 1G spark/jobs/pagerank.py --gzip --edges /cosr/back/out/d2dgraph/edges/ --vertices /cosr/back/out/d2dgraph/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 100 --shuffle_partitions 4 --stats 1 --tol -1 --precision 0.00001
+	spark-submit --executor-memory 1G --driver-memory 1G spark/jobs/pagerank.py --gzip --webgraph /cosr/back/out/d2dgraph/ --dump /cosr/back/out/pagerank/ --maxiter 100 --shuffle_partitions 4 --stats 1 --tol -1 --precision 0.00001
 	@echo ""
 	@echo "Top 10 domains:"
 	zcat out/pagerank/part*.gz | head

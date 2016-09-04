@@ -27,11 +27,8 @@ class PageRankJob(SparkJob):
 
     def add_arguments(self, parser):
 
-        parser.add_argument("--edges", default=None, type=str,
-                            help="Link to a parquet file containing the edges")
-
-        parser.add_argument("--vertices", default=None, type=str,
-                            help="Link to a parquet file containing the vertices")
+        parser.add_argument("--webgraph", default=None, type=str,
+                            help="Link to a parquet directory with edges and vertices subdirectories")
 
         parser.add_argument("--maxiter", default=5, type=int,
                             help="Maximum iterations for the PageRank algorithm")
@@ -129,12 +126,12 @@ class PageRankJob(SparkJob):
 
         # sc.setCheckpointDir("/tmp/spark-checkpoints")
 
-        edge_df = sqlc.read.load(self.args.edges)
+        edge_df = sqlc.read.load(os.path.join(self.args.webgraph, "edges"))
 
         if self.args.maxedges:
             edge_df = edge_df.limit(self.args.maxedges)
 
-        vertex_df = sqlc.read.load(self.args.vertices)
+        vertex_df = sqlc.read.load(os.path.join(self.args.webgraph, "vertices"))
 
         if self.args.maxvertices:
             vertex_df = vertex_df.limit(self.args.maxvertices)
@@ -305,12 +302,12 @@ class PageRankJob(SparkJob):
         #     SparkTypes.StructField("rank", SparkTypes.FloatType(), nullable=False)
         # ])
 
-        edge_df = sqlc.read.load(self.args.edges)
+        edge_df = sqlc.read.load(os.path.join(self.args.webgraph, "edges"))
 
         if self.args.maxedges:
             edge_df = edge_df.limit(self.args.maxedges)
 
-        vertex_df = sqlc.read.load(self.args.vertices)
+        vertex_df = sqlc.read.load(os.path.join(self.args.webgraph, "vertices"))
 
         if self.args.maxvertices:
             vertex_df = vertex_df.limit(self.args.maxvertices)
@@ -434,8 +431,8 @@ class PageRankJob(SparkJob):
 
         from graphframes import GraphFrame  # pylint: disable=import-error
 
-        edge_df = sqlc.read.load(self.args.edges)
-        vertex_df = sqlc.read.load(self.args.vertices)
+        edge_df = sqlc.read.load(os.path.join(self.args.webgraph, "edges"))
+        vertex_df = sqlc.read.load(os.path.join(self.args.webgraph, "vertices"))
 
         graph = GraphFrame(vertex_df, edge_df)
 
