@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import tempfile
 from collections import defaultdict
@@ -5,10 +7,10 @@ import shutil
 
 from cosrlib.config import config
 from cosrlib.url import URL
-from . import BaseDataSource
+from . import BaseDataProvider
 
 
-class DataSource(BaseDataSource):
+class DataProvider(BaseDataProvider):
     """ Return the UT1 categories in which the URL belongs.
 
         https://dsi.ut-capitole.fr/blacklists/index_en.php
@@ -54,7 +56,7 @@ class DataSource(BaseDataSource):
                                 data[url].append(fp)
                                 cnt += 1
 
-                print "Done %s (%s entries)" % (fp, cnt)
+                print("Done %s (%s entries)" % (fp, cnt))
 
         if clean:
             shutil.rmtree(os.path.dirname(extract_dir))

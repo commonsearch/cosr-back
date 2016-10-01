@@ -26,39 +26,39 @@ def test_get_hyperlinks():
     assert len(links) == 0
 
     links = _links("""<html><head><title>Test title</title></head><body>
-        <a href="http://sub.test.com/page1?q=2&a=b#xxx">Y</a>
+        <a href="http://sub.test.com/page1?q=2&a=b#xxx">Y </a>
     </body></html>""")
     assert len(links) == 1
     assert links[0]["href"].url == "http://sub.test.com/page1?q=2&a=b#xxx"
-    assert links[0]["words"] == ["Y"]
+    assert links[0]["text"] == "Y"
 
     links = _links("""<html><head><title>Test title</title></head><body>
-        <a href="/page1?q=2&a=b#xxx">Y</a>
+        <a href="/page1?q=2&a=b#xxx">Y x</a>
     </body></html>""", url="http://sub.test.com/page2")
     assert len(links) == 1
     assert links[0]["href"].url == "http://sub.test.com/page1?q=2&a=b#xxx"
-    assert links[0]["words"] == ["Y"]
+    assert links[0]["text"] == "Y x"
 
     links = _links("""<html><head><title>Test title</title></head><body>
-        <a href="../page1?q=2&a=b#xxx">Y</a>
+        <a href="../page1?q=2&a=b#xxx">Y_</a>
     </body></html>""", url="http://sub.test.com/page2/x.html")
     assert len(links) == 1
     assert links[0]["href"].url == "http://sub.test.com/page1?q=2&a=b#xxx"
-    assert links[0]["words"] == ["Y"]
+    assert links[0]["text"] == "Y_"
 
     links = _links("""<html><head><title>Test title</title></head><body>
-        <a href="http://UPPER.CASE.coM/PATH?QUERY=V">Y</a>
+        <a href="http://UPPER.CASE.coM/PATH?QUERY=V">*Y</a>
     </body></html>""", url="http://sub.test.com/page2/x.html")
     assert len(links) == 1
     assert links[0]["href"].url == "http://upper.case.com/PATH?QUERY=V"
-    assert links[0]["words"] == ["Y"]
+    assert links[0]["text"] == "*Y"
 
     links = _links("""<html><head><title>Test title</title></head><body>
         <a href="//UPPER.CASE.coM/PATH?QUERY=V">Y</a>
     </body></html>""", url="http://sub.test.com/page2/x.html")
     assert len(links) == 1
     assert links[0]["href"].url == "http://upper.case.com/PATH?QUERY=V"
-    assert links[0]["words"] == ["Y"]
+    assert links[0]["text"] == "Y"
 
     # We do not index links behind any kind of auth
     links = _links("""<html><head><title>Test title</title></head><body>
@@ -107,4 +107,4 @@ def test_get_hyperlinks_base_tag():
     </body></html>""", url="http://sub.test.com/page2/x.html")
     assert len(links) == 1
     assert links[0]["href"].url == "https://example.com/d1/page1?q=2&a=b#xxx"
-    assert links[0]["words"] == ["Y"]
+    assert links[0]["text"] == "Y"

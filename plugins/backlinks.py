@@ -1,28 +1,34 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+import os
+import shutil
+
 from pyspark.sql import types as SparkTypes
 
-from cosrlib.plugins import Plugin
-from cosrlib.spark import sql
+from cosrlib.spark import sql, SparkPlugin
 
 
-class MostExternallyLinkedPages(Plugin):
+class MostExternallyLinkedPages(SparkPlugin):
     """ Saves a list of most externally linked pages on a domain """
 
-    hooks = frozenset(["document_post_index", "spark_pipeline_action", "spark_pipeline_init"])
-
-    def spark_pipeline_init(self, sc, sqlc, schema, indexer):
+    def hook_spark_pipeline_init(self, sc, sqlc, schema, indexer):
         schema.append(SparkTypes.StructField("external_links", SparkTypes.ArrayType(SparkTypes.StructType([
             SparkTypes.StructField("href", SparkTypes.StringType(), nullable=False)
             # TODO: link text
         ])), nullable=True))
 
-    def document_post_index(self, document, metadata):
+        final_directory = self.args["path"]
+        if final_directory and os.path.isdir(final_directory):
+            shutil.rmtree(final_directory)
+
+    def hook_document_post_index(self, document, metadata):
         """ Filters a document post-indexing """
 
         metadata["external_links"] = [
             {"href": row["href"].url} for row in document.get_external_hyperlinks()
         ]
 
-    def spark_pipeline_action(self, sc, sqlc, df, indexer):
+    def hook_spark_pipeline_action(self, sc, sqlc, df, indexer):
 
         domain = self.args["domain"]
 
@@ -50,7 +56,7 @@ class MostExternallyLinkedPages(Plugin):
             ) == "%s"
             GROUP BY regexp_replace(url_to, "^http(s?)://", "")
             ORDER BY COUNT(*) DESC
-        """ % (len(domain), len(domain), domain), {"df": df})
+        """ % (len(domain) - 1, len(domain), domain), {"df": df})
 
         if self.args.get("limit"):
             lines_df = lines_df.limit(int(self.args["limit"]))
@@ -58,14 +64,8 @@ class MostExternallyLinkedPages(Plugin):
         if self.args.get("partitions"):
             lines_df = lines_df.coalesce(int(self.args["partitions"]))
             lines_df.persist()
-            print "Number of destination URLs: %s" % lines_df.count()
+            print("Number of destination URLs: %s" % lines_df.count())
 
-        if self.args.get("coalesce"):
-            lines_df = lines_df.coalesce(int(self.args["coalesce"]))
-
-        lines_df.write.text(
-            self.args["path"],
-            compression="gzip" if self.args.get("gzip") else "none"
-        )
+        self.save_dataframe(lines_df, "text")
 
         return True

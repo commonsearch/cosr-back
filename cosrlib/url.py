@@ -1,9 +1,14 @@
 # pylint: disable=too-many-branches
+
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import urllib
 # import tldextract as _tldextract
 import urlparse4 as urlparse
 
 from pyfaup.faup import Faup
+
+from . import py2_unicode
 
 
 def tld_extract(domain):
@@ -11,8 +16,8 @@ def tld_extract(domain):
     if "_faup" not in __builtins__:
         __builtins__["_faup"] = Faup()
     _faup = __builtins__["_faup"]
-    _faup.decode(domain.decode("utf-8").strip("."))
-    return (_faup.get_subdomain() or "", _faup.get_domain_without_tld() or "", _faup.get_tld() or "")
+    _faup.decode(domain.decode("utf-8").strip(b"."))
+    return (_faup.get_subdomain() or b"", _faup.get_domain_without_tld() or b"", _faup.get_tld() or b"")
 
 # TODO init lazily
 # _tldextractor = _tldextract.TLDExtract(suffix_list_urls=None)
@@ -23,7 +28,7 @@ class URL(object):
 
     def __init__(self, url, check_encoding=False):
 
-        if isinstance(url, unicode):
+        if isinstance(url, py2_unicode):
             self.url = url.encode("utf-8")
         else:
             self.url = url
@@ -38,8 +43,8 @@ class URL(object):
                 self.url = urlparse.urlunsplit((
                     p[0],
                     p[1],
-                    urllib.quote(p[2], safe="/"),
-                    urllib.quote(p[3], safe="&?="),
+                    urllib.quote(p[2], safe=b"/"),
+                    urllib.quote(p[3], safe=b"&?="),
                     urllib.quote(p[4])
                 ))
 
@@ -73,38 +78,38 @@ class URL(object):
             value = urlparse.urlunsplit((
                 None,
                 self.normalized_domain,
-                self.parsed.path if self.parsed.path else "/",
+                self.parsed.path if self.parsed.path else b"/",
                 self.parsed.query,
-                ""
-            )).lstrip("/")
+                b""
+            )).lstrip(b"/")
 
-            if value.count("/") == 1:
-                value = value.strip("/")
+            if value.count(b"/") == 1:
+                value = value.strip(b"/")
 
         elif attr == "normalized_without_query":
             value = urlparse.urlunsplit((
                 None,
                 self.normalized_domain,
-                self.parsed.path if self.parsed.path else "/",
-                "",
-                ""
-            )).lstrip("/")
+                self.parsed.path if self.parsed.path else b"/",
+                b"",
+                b""
+            )).lstrip(b"/")
 
-            if value.count("/") == 1:
-                value = value.strip("/")
+            if value.count(b"/") == 1:
+                value = value.strip(b"/")
 
         elif attr == "homepage":
             value = urlparse.urlunsplit((
                 self.parsed.scheme,
                 self.domain,
-                "/",
-                "",
-                ""
-            )).strip("/")
+                b"/",
+                b"",
+                b""
+            )).strip(b"/")
 
         # Pay-level domain
         elif attr == "pld":
-            value = "%s.%s" % (self.tldextracted[1], self.tldextracted[2])
+            value = b"%s.%s" % (self.tldextracted[1], self.tldextracted[2])
 
         elif attr == "domain":
             value = self.parsed.netloc
@@ -114,31 +119,31 @@ class URL(object):
 
         elif attr == "normalized_domain":
 
-            value = self.domain.strip(".")
+            value = self.domain.strip(b".")
 
-            while value.startswith("www."):
+            while value.startswith(b"www."):
                 value = value[4:]
 
-            if value.endswith(':80'):
+            if value.endswith(b':80'):
                 value = value[:-3]
-            elif value.endswith(':443'):
+            elif value.endswith(b':443'):
                 value = value[:-4]
 
-            value = value.strip(".")
+            value = value.strip(b".")
 
         elif attr == "normalized_subdomain":
 
-            value = self.subdomain.strip(".")
+            value = self.subdomain.strip(b".")
 
-            if value == "www":
-                value = ""
+            if value == b"www":
+                value = b""
             else:
-                while value.startswith("www."):
+                while value.startswith(b"www."):
                     value = value[4:]
 
         elif attr == "normalized_path":
-            if self.parsed.path == "/":
-                return ""
+            if self.parsed.path == b"/":
+                return b""
             return self.parsed.path
 
         # https://en.wikipedia.org/wiki/Public_Suffix_List

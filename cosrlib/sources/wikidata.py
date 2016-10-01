@@ -1,27 +1,33 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from cosrlib.sources import Source
 from cosrlib.document import Document
-from urlserver.datasources import load_datasource
+from cosrlib.dataproviders import load_dataprovider
 
 
 class WikidataSource(Source):
     """ Source that reads 'fake' documents from the WikiData dump """
 
-    def iter_documents(self):
+    def get_partitions(self):
 
-        datasource = load_datasource("wikidata")
+        return ["__wikidata_single_dump__"]
+
+    def iter_documents(self, partition):
+
+        dataprovider = load_dataprovider("wikidata")
 
         i = 0
-        maxdocs = int(self.args.get("maxdocs") or 9999999999)
+        maxdocs = int(self.args.get("maxdocs") or 0)
 
-        for key, _ in datasource.iter_rows():
+        for key, _ in dataprovider.iter_rows():
 
-            doc = Document(None, url="http://%s" % key)  # TODO get the original URL instead?
+            doc = Document(None, url=b"http://%s" % key)  # TODO get the original URL instead?
 
-            # Summary & title will be inferred from the Wikidata *datasource* via url_metadata
+            # Summary & title will be inferred from the Wikidata *dataprovider* via url_metadata
             # doc._title = values["wikidata_title"]
 
             yield doc
 
             i += 1
-            if i > maxdocs:
+            if i >= maxdocs > 0:
                 return

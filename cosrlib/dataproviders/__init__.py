@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import csv
 import zipfile
 import StringIO
@@ -18,25 +20,25 @@ from urlserver.protos import urlserver_pb2
 from urlserver.id_generator import make_url_id
 
 
-def list_datasources():
-    """ Returns a dict of all available datasources """
-    datasources = {}
+def list_dataproviders():
+    """ Returns a dict of all available data providers """
+    dataproviders = {}
 
-    datasource_dir = os.path.join(os.path.dirname(__file__))
-    for datasource in os.listdir(datasource_dir):
-        if not datasource.startswith("_") and datasource.endswith(".py"):
-            ds_name = datasource.replace(".py", "")
-            datasources[ds_name] = load_datasource(ds_name)
+    dataprovider_dir = os.path.join(os.path.dirname(__file__))
+    for dataprovider in os.listdir(dataprovider_dir):
+        if not dataprovider.startswith("_") and dataprovider.endswith(".py"):
+            name = dataprovider.replace(".py", "")
+            dataproviders[name] = load_dataprovider(name)
 
-    return datasources
-
-
-def load_datasource(name):
-    return importlib.import_module(".%s" % name, package="urlserver.datasources").DataSource(name)
+    return dataproviders
 
 
-class BaseDataSource(object):
-    """ Base DataSource class """
+def load_dataprovider(name):
+    return importlib.import_module(".%s" % name, package="cosrlib.dataproviders").DataProvider(name)
+
+
+class BaseDataProvider(object):
+    """ Base Data Provider class """
 
     dump_testdata = None
     dump_url = None
@@ -98,16 +100,16 @@ class BaseDataSource(object):
                         3600.0 * done / (time.time() - batch_time)
                     )
 
-                print "Done %s (%s/s, ~%0.2f%%, ETA %0.2fh)" % (
+                print("Done %s (%s/s, ~%0.2f%%, ETA %0.2fh)" % (
                     done,
                     int(done / (time.time() - batch_time)),
                     (float(done * 100) / self.dump_count_estimate) if self.dump_count_estimate else 0,
                     eta
-                )
+                ))
                 write_batch = db.write_batch(write_batch)
                 batch_time = time.time()
 
-        print "Total rows: %s" % done
+        print("Total rows: %s" % done)
         db.write_batch(write_batch)
         db.close()
 
@@ -120,11 +122,11 @@ class BaseDataSource(object):
             reader = csv.reader(f)
 
         elif self.dump_format == "tsv":
-            reader = csv.reader(f, delimiter="\t")
+            reader = csv.reader(f, delimiter=b"\t")
 
         elif self.dump_format == "xml":
-            reader = ElementTree.iterparse(f, events=("start", "end"))
-            _, self.xml_root = reader.next()
+            reader = ElementTree.iterparse(f, events=(b"start", b"end"))
+            _, self.xml_root = next(reader)
 
         elif self.dump_format == "json-lines":
             def _reader():

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import tempfile
 from cosrlib.sources import Source
@@ -14,6 +16,31 @@ except ImportError:
 class WebarchiveSource(Source):
     """ Generic .warc Source """
 
+    def get_partitions(self):
+
+        # .txt file with one .warc path per line
+        if self.args.get("list"):
+
+            with open(self.args["list"], "rb") as f:
+                return [{
+                    "path": x.strip(),
+                    "source": "warc"
+                } for x in f.readlines()]
+
+        # Direct list of .warc filepaths
+        elif self.args.get("paths"):
+            return [{
+                "path": path,
+                "source": "warc"
+            } for path in self.args["paths"]]
+
+        # Single .warc
+        else:
+            return [{
+                "path": self.args["path"],
+                "source": "warc"
+            }]
+
     def _warc_reader_from_file(self, filereader, filepath):
         """ Creates a WARC record iterator from a file reader """
 
@@ -23,16 +50,16 @@ class WebarchiveSource(Source):
             # TODO: investigate how we could use cloudflare's zlib
             return warc.WARCFile(fileobj=GzipStreamFile(filereader))
 
-    def open_warc_stream(self):
+    def open_warc_stream(self, filepath):
         """ Creates a WARC record iterator from the filepath given to the Source """
 
-        filereader = open(self.args["file"], "rb")
-        return self._warc_reader_from_file(filereader, self.args["file"])
+        filereader = open(filepath, "rb")
+        return self._warc_reader_from_file(filereader, filepath)
 
-    def iter_items(self):
+    def iter_items(self, partition):
         """ Yields objects in the source's native format """
 
-        warc_stream = self.open_warc_stream()
+        warc_stream = self.open_warc_stream(partition["path"])
 
         for record in warc_stream:
 
@@ -44,7 +71,7 @@ class WebarchiveSource(Source):
 
             url = URL(record.url, check_encoding=True)
 
-            do_parse, index_level = self.filter_url(url)
+            do_parse, index_level = self.qualify_url(url)
 
             if not do_parse:
                 continue

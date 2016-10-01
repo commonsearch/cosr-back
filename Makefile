@@ -6,12 +6,17 @@ PWD := $(shell pwd)
 
 # Build local Docker images
 docker_build:
+	make docker_hash > .dockerhash
 	docker build -t commonsearch/local-back .
 
 # Pull Docker images from the registry
 docker_pull:
 	docker pull commonsearch/local-back
 	docker pull commonsearch/local-elasticsearch
+
+# Build a unique hash to indicate that a docker_build may be necessary again
+docker_hash:
+	@sh -c 'cat Dockerfile requirements.txt | grep -vE "^\s*\#" | grep -vE "^\s*$$" | openssl md5'
 
 # Build a source distribution, to be sent to a Spark cluster
 build_source_export:
@@ -87,8 +92,14 @@ devindex: restart_services
 #
 
 # Logins into a new container
-docker_shell:
-	# -v "$(PWD)/../gumbocy:/cosr/gumbocy:rw"
+docker_shell: docker_check
+	@# Check if a container is already using port 4040
+	@bash -c "if [ -z '`docker ps -q | xargs -n1 docker port | grep ':4040$$'`' ]; then make docker_shell_with_ports; else make docker_shell_no_ports; fi"
+
+docker_shell_with_ports:
+	docker run -p 4040:4040 -p 4041:4041 -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
+
+docker_shell_no_ports:
 	docker run -p 4040 -p 4041 -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
 
 # Logins into the same container again
@@ -103,6 +114,10 @@ docker_stop_all:
 docker_clean:
 	docker rm -v $$(docker ps -a -q -f status=exited) || true
 	docker rmi $$(docker images -aq) || true
+
+# Checks if the container is out of date
+docker_check:
+	@bash -c 'docker run -v "$(PWD):/cosr/back:ro" -t commonsearch/local-back sh -c "if diff -q /cosr/.back-dockerhash /cosr/back/.dockerhash > /dev/null; then echo \"Docker image is up to date\"; else echo \"\nWARNING: Your Docker image seems to be out of date! Please exit and do \\\"make docker_build\\\" again to avoid any issues.\n\"; fi"'
 
 start_local_elasticsearch:
 	# sudo ifconfig lo0 alias 10.0.2.2
@@ -128,38 +143,37 @@ restart_services: stop_services start_services
 # Reindex 1 WARC file from Common Crawl
 reindex1:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit spark/jobs/index.py --source commoncrawl:limit=1 --profile
+	spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=1 --plugin plugins.filter.All:index_body=1 --profile
 
 # Reindex 10 WARC files from Common Crawl
 reindex10:
 	./scripts/elasticsearch_reset.py --delete
-	spark-submit spark/jobs/index.py --source commoncrawl:limit=10 --profile
+	spark-submit spark/jobs/pipeline.py --source commoncrawl:limit=10 --plugin plugins.filter.All:index_body=1 --profile
 
 # Do a standard reindex
 reindex_standard:
 
 	rm -rf ./out/
 	./scripts/elasticsearch_reset.py --delete
-	# spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --stop_delay 600 --source wikidata:maxdocs=10000,block=1 --source commoncrawl:limit=40,maxdocs=100,block=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.filter.Homepages:index_body=1 --plugin plugins.webgraph.DomainToDomainParquet:path=/cosr/back/out/,coalesce=1
-	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/index.py --source commoncrawl:limit=200,maxdocs=100,block=1 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.webgraph.DomainToDomainParquet:path=/cosr/back/out/
+	spark-submit --master local[4] --verbose --executor-memory 1G --driver-memory 512M spark/jobs/pipeline.py --source commoncrawl:limit=200,maxdocs=100,block=1 --plugin plugins.webgraph.DomainToDomainParquet:path=/cosr/back/out/
 
 pagerank_standard:
 	rm -rf ./out/pagerank/
-	spark-submit --conf spark.executor.extraJavaOptions=-XX:+UseConcMarkSweepGC --executor-memory 1G --driver-memory 1G spark/jobs/pagerank.py --gzip --edges /cosr/back/out/d2dgraph/edges/ --vertices /cosr/back/out/d2dgraph/vertices/ --dump /cosr/back/out/pagerank/ --maxiter 100 --shuffle_partitions 10 --stats 1 --tol -1
+	spark-submit --executor-memory 1G --driver-memory 1G spark/jobs/pagerank.py --gzip --webgraph /cosr/back/out/d2dgraph/ --dump /cosr/back/out/pagerank/ --maxiter 100 --shuffle_partitions 4 --stats 1 --tol -1 --precision 0.00001
 	@echo ""
 	@echo "Top 10 domains:"
 	zcat out/pagerank/part*.gz | head
 
 dump_standard:
 	rm -rf ./out/
-	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source commoncrawl:limit=100,maxdocs=1000 --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=./out/metadata,abort=1 --plugin plugins.webgraph.DomainToDomainParquet
+	spark-submit --verbose spark/jobs/pipeline.py --stop_delay 600 --source commoncrawl:limit=100,maxdocs=1000 --plugin plugins.dump.DocumentMetadata:format=parquet,path=./out/metadata,abort=1 --plugin plugins.webgraph.DomainToDomainParquet
 
 viewdump_standard:
 	hadoop jar /usr/spark/packages/jars/parquet-tools-1.8.1.jar cat --json ./out/metadata/
 
 graph_standard:
 	rm -rf out/d2dgraph
-	spark-submit --verbose spark/jobs/index.py --stop_delay 600 --source parquet:path=./out/metadata/ --plugin plugins.webgraph.DomainToDomainParquet:path=./out/d2dgraph,coalesce=10
+	spark-submit --verbose spark/jobs/pipeline.py --stop_delay 600 --source parquet:path=./out/metadata/ --plugin plugins.webgraph.DomainToDomainParquet:path=./out/d2dgraph,coalesce=10
 
 
 # Run the explainer web service inside Docker
@@ -189,10 +203,11 @@ docker_test_coverage:
 	docker run -e TRAVIS -e TRAVIS_BRANCH -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
 
 pylint:
-	PYTHONPATH=. pylint cosrlib urlserver spark explainer plugins
+	PYTHONPATH=. pylint -j 0 cosrlib urlserver spark explainer plugins
+	PYTHONPATH=. pylint --py3k -j 0 cosrlib urlserver spark explainer plugins
 
 docker_pylint:
 	docker run -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make pylint
 
 todo:
-	PYTHONPATH=. pylint --disable=all --enable=fixme cosrlib urlserver spark explainer plugins
+	PYTHONPATH=. pylint -j 0 --disable=all --enable=fixme cosrlib urlserver spark explainer plugins

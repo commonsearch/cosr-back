@@ -1,68 +1,108 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import shutil
 
 from pyspark.sql import types as SparkTypes
 
-from cosrlib.plugins import Plugin
 from cosrlib.url import URL
-from cosrlib.spark import createDataFrame, sql
+from cosrlib.spark import createDataFrame, sql, SparkPlugin
+from cosrlib import re, py2_long
 from urlserver.id_generator import _fast_make_domain_id
 
 
-class DomainToDomain(Plugin):
-    """ Saves a graph of domain=>domain links in text format """
+_RE_STRIP_FRAGMENT = re.compile(r"#.*")
 
-    hooks = frozenset(["document_post_index", "spark_pipeline_action", "spark_pipeline_init"])
 
-    def spark_pipeline_init(self, sc, sqlc, schema, indexer):
-        schema.append(SparkTypes.StructField("external_links", SparkTypes.ArrayType(SparkTypes.StructType([
-            SparkTypes.StructField("href", SparkTypes.StringType(), nullable=False)
-            # TODO: link text
-        ])), nullable=True))
+class WebGraphPlugin(SparkPlugin):
+    """ Base class for WebGraph plugins """
 
-    def document_post_index(self, document, metadata):
-        """ Filters a document post-indexing """
+    include_external = True
+    include_internal = True
 
-        metadata["external_links"] = [
-            {"href": row["href"].url} for row in document.get_external_hyperlinks()
-        ]
+    def hook_spark_pipeline_init(self, sc, sqlc, schema, indexer):
+
+        if self.include_external:
+            schema.append(
+                SparkTypes.StructField("external_links", SparkTypes.ArrayType(SparkTypes.StructType([
+                    SparkTypes.StructField("href", SparkTypes.StringType(), nullable=False),
+                    SparkTypes.StructField("text", SparkTypes.StringType(), nullable=True)
+                ])), nullable=True)
+            )
+
+        if self.include_internal:
+            schema.append(
+                SparkTypes.StructField("internal_links", SparkTypes.ArrayType(SparkTypes.StructType([
+                    SparkTypes.StructField("path", SparkTypes.StringType(), nullable=False),
+                    SparkTypes.StructField("text", SparkTypes.StringType(), nullable=True)
+                ])), nullable=True)
+            )
+
+    def hook_document_post_index(self, document, metadata):
+        """ Collect all unique normalized external URLs """
+
+        if self.include_external:
+            seen = set()
+            for link in document.get_external_hyperlinks(exclude_nofollow=self.exclude_nofollow):
+                key = (link["href"].normalized, link["text"])
+                if key not in seen:
+                    seen.add(key)
+                    metadata.setdefault("external_links", [])
+                    metadata["external_links"].append(key)
+
+        if self.include_internal:
+            seen = set()
+            metadata["internal_links"] = []
+            for link in document.get_internal_hyperlinks():  # exclude_nofollow=self.exclude_nofollow):
+                key = (_RE_STRIP_FRAGMENT.sub("", link["path"]), link["text"])
+                if key not in seen:
+                    seen.add(key)
+                    metadata.setdefault("internal_links", [])
+                    metadata["internal_links"].append(key)
 
     def init(self):
+
+        self.exclude_nofollow = (self.args.get("include_nofollow") != "1")
+
         if self.args.get("path"):
             if os.path.isdir(os.path.join(self.args["path"], "edges")):
                 shutil.rmtree(os.path.join(self.args["path"], "edges"))
             if os.path.isdir(os.path.join(self.args["path"], "vertices")):
                 shutil.rmtree(os.path.join(self.args["path"], "vertices"))
 
-    def spark_pipeline_action(self, sc, sqlc, df, indexer):
 
-        def iter_links_domain(record):
-            """ Returns all the parsed links in this record as (from_domain, to_domain) tuples  """
+class DomainToDomain(WebGraphPlugin):
+    """ Saves a graph of domain=>domain links in text format """
 
-            record_domain = URL(record["url"]).normalized_domain
-            domains = list(set([
-                URL(link["href"]).normalized_domain
-                for link in record["external_links"]
-            ]))
+    include_internal = False
 
-            return [(record_domain, d) for d in domains]
+    def hook_spark_pipeline_action(self, sc, sqlc, df, indexer):
 
-        rdd = df.rdd.flatMap(iter_links_domain).distinct().map(lambda row: "%s %s" % row)
+        # Get all unique (host1 => host2) pairs
+        domain_pairs = sql(sqlc, """
+            SELECT parse_url(url, "HOST") as d1, parse_url(CONCAT("http://", link), "HOST") as d2
+            FROM (
+                SELECT url, EXPLODE(external_links.href) as link FROM df
+            ) as pairs
+        """, {"df": df}).distinct()
 
-        if self.args.get("coalesce"):
-            rdd = rdd.coalesce(int(self.args["coalesce"]), shuffle=bool(self.args.get("shuffle")))
+        # Format as csv
+        lines = sql(sqlc, """
+            SELECT CONCAT(d1, " ", d2) as r
+            FROM pairs
+        """, {"pairs": domain_pairs})
 
-        codec = None
-        if self.args.get("gzip"):
-            codec = "org.apache.hadoop.io.compress.GzipCodec"
+        self.save_dataframe(lines, "text")
 
-        rdd.saveAsTextFile(self.args["path"], codec)
+        return True
 
 
-class DomainToDomainParquet(DomainToDomain):
+class DomainToDomainParquet(WebGraphPlugin):
     """ Saves a graph of domain=>domain links in Apache Parquet format """
 
-    def spark_pipeline_action(self, sc, sqlc, df, indexer):
+    include_internal = False
+
+    def hook_spark_pipeline_action(self, sc, sqlc, df, indexer):
 
         self.save_vertex_graph(sqlc, df)
         self.save_edge_graph(sqlc, df)
@@ -87,7 +127,7 @@ class DomainToDomainParquet(DomainToDomain):
         """, {"df": df}).distinct()
 
         d2_df = sql(sqlc, """
-            SELECT parse_url(link, "HOST") as domain
+            SELECT parse_url(CONCAT("http://", link), "HOST") as domain
             FROM (
                 SELECT EXPLODE(external_links.href) as link FROM df
             ) as pairs
@@ -109,16 +149,15 @@ class DomainToDomainParquet(DomainToDomain):
             except Exception:  # pylint: disable=broad-except
                 return []
 
-            return [(long(_id), str(name))]
+            return [(py2_long(_id), str(name))]
 
         rdd_domains = all_domains_df.rdd.flatMap(iter_domain)
 
         vertex_df = createDataFrame(sqlc, rdd_domains, vertex_graph_schema).distinct()
 
-        if self.args.get("coalesce_vertices") or self.args.get("coalesce"):
-            vertex_df = vertex_df.coalesce(
-                int(self.args.get("coalesce_vertices") or self.args.get("coalesce"))
-            )
+        coalesce = int(self.args.get("coalesce_vertices") or self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            vertex_df = vertex_df.coalesce(coalesce)
 
         vertex_df.write.parquet(os.path.join(self.args["path"], "vertices"))
 
@@ -140,7 +179,7 @@ class DomainToDomainParquet(DomainToDomain):
 
         # Get all unique (host1 => host2) pairs
         new_df = sql(sqlc, """
-            SELECT parse_url(url, "HOST") as d1, parse_url(link, "HOST") as d2
+            SELECT parse_url(url, "HOST") as d1, parse_url(CONCAT("http://", link), "HOST") as d2
             FROM (
                 SELECT url, EXPLODE(external_links.href) as link FROM df
             ) as pairs
@@ -163,7 +202,7 @@ class DomainToDomainParquet(DomainToDomain):
             if from_domain == to_domain:
                 return []
             else:
-                return [(long(from_domain), long(to_domain))]
+                return [(py2_long(from_domain), py2_long(to_domain))]
 
         rdd_couples = new_df.rdd.flatMap(iter_links_domain)
 
@@ -184,9 +223,8 @@ class DomainToDomainParquet(DomainToDomain):
             JOIN weights on edges.src = weights.id
         """, {"edges": edge_df, "weights": weights_df})
 
-        if self.args.get("coalesce_edges") or self.args.get("coalesce"):
-            weighted_edge_df = weighted_edge_df.coalesce(
-                int(self.args.get("coalesce_edges") or self.args.get("coalesce"))
-            )
+        coalesce = int(self.args.get("coalesce_edges") or self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            weighted_edge_df = weighted_edge_df.coalesce(coalesce)
 
         weighted_edge_df.write.parquet(os.path.join(self.args["path"], "edges"))

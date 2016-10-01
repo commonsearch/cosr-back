@@ -128,25 +128,25 @@ def test_get_hyperlinks():
     links = page.get_external_hyperlinks()
     assert len(links) == 3
     assert links[0]["href"].url == "http://other.example.com/page4"
-    assert links[0]["words"] == ["absolute4"]
+    assert links[0]["text"] == "absolute4"
 
     assert links[1]["href"].url == "http://other.example.com/page5?q=1#d"
-    assert links[1]["words"] == ["absolute5"]
+    assert links[1]["text"] == "absolute5"
 
     assert links[2]["href"].url == "https://other.example.com/page6?q=1#d"
-    assert links[2]["words"] == ["absolute6"]
+    assert links[2]["text"] == "absolute6"
 
     # This doesn't return URLs, it returns strings (they are paths)
     links = page.get_internal_hyperlinks()
     assert len(links) == 3
     assert links[0]["path"] == "/page1"
-    assert links[0]["words"] == ["link", "text"]
+    assert links[0]["text"] == "link text"
 
     assert links[1]["path"] == "/page2"
-    assert links[1]["words"] == ["relative2"]
+    assert links[1]["text"] == "relative2"
 
     assert links[2]["path"] == "page3?q=1#d"
-    assert links[2]["words"] == ["relative3"]
+    assert links[2]["text"] == "relative3"
 
     # All links in absolute
     links = page.get_hyperlinks()

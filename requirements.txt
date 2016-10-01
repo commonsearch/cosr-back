@@ -53,7 +53,7 @@ cchardet==1.0.0
 http_parser==0.8.3
 
 # Gumbo binding for HTML parsing
--e git+git://github.com/commonsearch/gumbocy.git@4411c40c2b7c83c6a292de3b42581478c5e3c121#egg=gumbocy
+-e git+git://github.com/commonsearch/gumbocy.git@e83331acf0e9b5673dcfb82cf80014c558539a41#egg=gumbocy
 
 # Used for performance improvements in critical parts of the code
 Cython==0.24
@@ -68,10 +68,13 @@ gevent==1.1.1
 Flask==0.11.1
 
 # Used for URLServer data storage & exchange
-protobuf==3.0.0b3
+protobuf==3.0.0
 
 # Performance-focused replacement for urlparse
 -e git+git://github.com/commonsearch/urlparse4.git@fda910309aa189d57473dbb12e2d2acde49c1736#egg=urlparse4
 
 # LRU cache implementation in C
 lru-dict==1.1.4
+
+# OAI-PMH client for the OAI document source
+pyoai==2.4.5

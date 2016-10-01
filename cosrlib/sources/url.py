@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from cosrlib.sources import Source
 import requests
 
@@ -5,10 +7,20 @@ import requests
 class UrlSource(Source):
     """ Source that actually fetches an URL. Use with caution! """
 
-    def iter_items(self):
+    def get_partitions(self):
 
-        for url in self.args["urls"]:
-            fetched = requests.get(url, headers={'user-agent': 'CommonSearch/dev'})
+        if self.args.get("urls"):
+            return [{
+                "url": url
+            } for url in self.args["urls"]]
+        else:
+            return [{
+                "url": self.args["url"]
+            }]
 
-            if fetched.status_code == 200:
-                yield url, fetched.headers, "html", 2, fetched.content
+    def iter_items(self, partition):
+
+        fetched = requests.get(partition["url"], headers={'user-agent': 'CommonSearch/dev'})
+
+        if fetched.status_code == 200:
+            yield partition["url"], fetched.headers, "html", 2, fetched.content

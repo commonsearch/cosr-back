@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import traceback
 
 #
@@ -12,7 +14,7 @@ def ignore_exceptions(default):
             try:
                 return fn(*args, **kwargs)
             except Exception:  # pylint: disable=broad-except
-                print "Caught Python exception!"
+                print("Caught Python exception!")
                 traceback.print_exc()
                 return default
         return wrapped
@@ -26,6 +28,6 @@ def ignore_exceptions_generator(fn):
             for x in fn(*args, **kwargs):
                 yield x
         except Exception:  # pylint: disable=broad-except
-            print "Caught Python exception in generator!"
+            print("Caught Python exception in generator!")
             traceback.print_exc()
     return wrapped

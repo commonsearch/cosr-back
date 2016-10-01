@@ -7,14 +7,13 @@ import os
 import ujson as json
 
 
-@pytest.mark.elasticsearch
 def test_spark_plugin_grep(sparksubmit):
 
     tmp_dir = tempfile.mkdtemp()
 
     try:
 
-        sparksubmit("spark/jobs/index.py --source corpus:%s --plugin plugins.filter.All:index=0 --plugin 'plugins.grep.Words:words=c1 d1 world,path=%s/out/,coalesce=1'" % (
+        sparksubmit("spark/jobs/pipeline.py --source corpus:%s --plugin 'plugins.grep.Words:words=c1 d1 world,path=%s/out/,coalesce=1'" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             tmp_dir
         ))

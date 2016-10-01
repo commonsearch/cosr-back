@@ -1,24 +1,24 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import shutil
 
-from cosrlib.plugins import Plugin, PLUGIN_HOOK_ABORT
+from cosrlib.plugins import PLUGIN_HOOK_ABORT
+from cosrlib.spark import SparkPlugin
 
 
-class DocumentMetadataParquet(Plugin):
+class DocumentMetadata(SparkPlugin):
     """ Stores intermediate documents in parquet format """
-
-    hooks = frozenset(["spark_pipeline_action"])
 
     def init(self):
         if self.args.get("path") and os.path.isdir(self.args["path"]):
             shutil.rmtree(self.args["path"])
 
-    def spark_pipeline_action(self, sc, sqlc, doc_df, indexer):
+        self.format = self.args.get("format") or "parquet"
 
-        if self.args.get("coalesce"):
-            doc_df = doc_df.coalesce(int(self.args["coalesce"]))
+    def hook_spark_pipeline_action(self, sc, sqlc, doc_df, indexer):
 
-        doc_df.write.parquet(self.args["path"])
+        self.save_dataframe(doc_df, self.format)
 
         if self.args.get("abort"):
             return PLUGIN_HOOK_ABORT

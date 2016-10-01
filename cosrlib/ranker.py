@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from .signals import load_signal
 from .document import Document
 
@@ -42,7 +44,7 @@ class Ranker(object):
 
         signals = {}
 
-        for signal_name, weight in signal_weights.iteritems():
+        for signal_name, weight in signal_weights.items():
 
             signals[signal_name] = {
                 "value": load_signal(signal_name).get_value(document, url_metadata),

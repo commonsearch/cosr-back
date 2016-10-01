@@ -41,9 +41,9 @@ def test_spark_plugin_filter(searcher, indexer, sparksubmit):
     # With this, we disable parsing (hence indexation) for all documents by defaults,
     # and then selectively re-enable features with some filters
     sparksubmit(
-        "spark/jobs/index.py " +
-        " --plugin plugins.filter.All:parse=0 " +
-        " --plugin plugins.filter.Homepages:index_body=0 " +
+        "spark/jobs/pipeline.py " +
+        " --plugin plugins.filter.All:skip=1 " +
+        " --plugin plugins.filter.Homepages:index=1 " +
         " --plugin plugins.filter.Domains:domains=example2.com,index_body=1 " +
         " --plugin plugins.filter.Domains:domains=example3.com,index=0 " +
         " --source corpus:%s " % (

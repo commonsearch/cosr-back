@@ -24,11 +24,6 @@ RUN echo 'deb http://ftp.us.debian.org/debian jessie-backports main' > /etc/apt/
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/jre
 ENV LANG C.UTF-8
-ENV JAVA_VERSION 8u91
-ENV JAVA_DEBIAN_VERSION 8u91-b14-1~bpo8+1
-# see https://bugs.debian.org/775775
-# and https://github.com/docker-library/java/issues/19#issuecomment-70546872
-ENV CA_CERTIFICATES_JAVA_VERSION 20140324
 
 RUN apt-get clean && apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -57,16 +52,11 @@ RUN apt-get clean && apt-get update && apt-get upgrade -y && apt-get install -y 
     net-tools \
     unzip \
     dstat \
-    openjdk-8-jre-headless="$JAVA_DEBIAN_VERSION" \
-    ca-certificates-java="$CA_CERTIFICATES_JAVA_VERSION"
+    openjdk-8-jre-headless \
+    ca-certificates-java
 
 # We could do this to save on image size but we're optimizing for developer experience instead
 # && rm -rf /var/lib/apt/lists/*
-
-# see CA_CERTIFICATES_JAVA_VERSION notes above
-RUN /var/lib/dpkg/info/ca-certificates-java.postinst configure
-
-
 
 
 #
@@ -76,7 +66,7 @@ RUN /var/lib/dpkg/info/ca-certificates-java.postinst configure
 ENV ROCKSDB_VERSION 4.1
 RUN wget https://github.com/facebook/rocksdb/archive/v${ROCKSDB_VERSION}.tar.gz && \
   tar -zxvf v${ROCKSDB_VERSION}.tar.gz && cd rocksdb-${ROCKSDB_VERSION} && \
-  make shared_lib && make install && \
+  PORTABLE=1 make shared_lib && make install && \
   cd .. && rm -rf rocksdb-${ROCKSDB_VERSION} v${ROCKSDB_VERSION}.tar.gz
 
 
@@ -108,11 +98,12 @@ RUN mkdir -p /tmp/re2 && \
 # Install Protocol Buffers
 #
 
-ENV PROTOBUF_VERSION 3.0.0-beta-3.1
-RUN wget https://codeload.github.com/google/protobuf/tar.gz/v${PROTOBUF_VERSION} && \
-  tar zxf v${PROTOBUF_VERSION} && cd protobuf-${PROTOBUF_VERSION} && \
+# v3.0.0 doesn't build anymore - see https://github.com/google/protobuf/commit/1760feb621a913189b90fe8595fffb74bce84598
+ENV PROTOBUF_VERSION a098e809336c5fbad7a8ff8f1210e5e0ac8d29b2
+RUN curl -sL https://github.com/google/protobuf/archive/${PROTOBUF_VERSION}.tar.gz | tar zx && \
+  cd protobuf-${PROTOBUF_VERSION} && \
   ./autogen.sh && ./configure && make && make install && ldconfig && \
-  cd .. && rm -rf protobuf-${PROTOBUF_VERSION} v${PROTOBUF_VERSION}
+  cd .. && rm -rf protobuf-${PROTOBUF_VERSION}
 
 
 # Oracle JDK is recommended in some places versus Open JDK so it may be interesting to
@@ -214,3 +205,6 @@ RUN pip install -r /requirements.txt
 
 # Base directory
 RUN mkdir -p /cosr/back
+
+# Save the hash at the time the image was built
+ADD .dockerhash /cosr/.back-dockerhash

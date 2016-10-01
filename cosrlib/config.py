@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import json
 import re
@@ -41,5 +43,5 @@ if os.path.isfile(_config_file):
         _defaults.update(json.loads(_cnt))
 
 config = {}
-for k, default in _defaults.iteritems():
+for k, default in _defaults.items():
     config[k] = os.getenv("COSR_%s" % k, default)

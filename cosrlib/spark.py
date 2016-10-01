@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import argparse
 import time
@@ -8,6 +10,7 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.rdd import RDD
 
 from cosrlib.config import config
+from cosrlib.plugins import Plugin
 
 
 def setup_spark_worker(*a, **kw):
@@ -19,7 +22,7 @@ def setup_spark_worker(*a, **kw):
             from pytest_cov.embed import init
             cov = init()
             __builtins__["_cosr_pyspark_coverage"] = cov
-            print "Coverage started for PID", os.getpid()
+            print("Coverage started for PID", os.getpid())
 
         __builtins__["_cosr_pyspark_setup_done"] = True
 
@@ -27,7 +30,7 @@ def setup_spark_worker(*a, **kw):
 def teardown_spark_worker(*a, **kw):
     """ Used in tests, runs in each worker when the task is finished """
     if "_cosr_pyspark_coverage" in __builtins__:
-        print "Coverage stop for PID", os.getpid()
+        print("Coverage stop for PID", os.getpid())
         cov = __builtins__["_cosr_pyspark_coverage"]
         cov.stop()
         cov.save()
@@ -40,29 +43,24 @@ def createDataFrame(sqlc, data, schema, samplingRatio=None):
     """
     # pylint: disable=protected-access
 
-    # Spark 2.0.0+
-    if hasattr(sqlc, "sparkSession"):
-        self = sqlc.sparkSession
+    self = sqlc.sparkSession
 
-        if isinstance(data, RDD):
-            rdd, schema = self._createFromRDD(data, schema, samplingRatio)
-        else:
-            rdd, schema = self._createFromLocal(data, schema)
-
-        jrdd = self._jvm.SerDeUtil.toJavaArray(rdd._to_java_object_rdd())
-        jdf = self._jsparkSession.applySchemaToPythonRDD(jrdd.rdd(), schema.json())
-        df = DataFrame(jdf, self._wrapped)
-        df._schema = schema
-        return df
-
+    if isinstance(data, RDD):
+        rdd, schema = self._createFromRDD(data, schema, samplingRatio)
     else:
-        return sqlc.createDataFrame(data, schema, samplingRatio=samplingRatio)
+        rdd, schema = self._createFromLocal(data, schema)
+
+    jrdd = self._jvm.SerDeUtil.toJavaArray(rdd._to_java_object_rdd())
+    jdf = self._jsparkSession.applySchemaToPythonRDD(jrdd.rdd(), schema.json())
+    df = DataFrame(jdf, self._wrapped)
+    df._schema = schema
+    return df
 
 
 def sql(sqlc, query, tables=None):
     """ Helper that runs a Spark SQL query with a list of temporary tables """
 
-    for key, df in (tables or {}).iteritems():
+    for key, df in (tables or {}).items():
         sqlc.registerDataFrameAsTable(df, key)
 
     ret = sqlc.sql(query)
@@ -144,6 +142,9 @@ class SparkJob(object):
 
             ("spark.speculation", "false"),
 
+            # ("spark.sql.parquet.enableVectorizedReader", "false")
+
+            # TODO https://groups.google.com/forum/#!topic/spark-users/YnAlw7dVdQA ?
             # set("spark.akka.frameSize", "128")
         ))
 
@@ -169,20 +170,24 @@ class SparkJob(object):
         sqlc = SQLContext(sc)
 
         if config["ENV"] != "prod":
-            sc.parallelize(range(4), 4).foreach(setup_spark_worker)
+            sc.parallelize(list(range(4)), 4).foreach(setup_spark_worker)
 
         return sc, sqlc
 
     def teardown_spark_context(self, sc, sqlc):
 
         if config["ENV"] != "prod":
-            sc.parallelize(range(4), 4).foreach(teardown_spark_worker)
+            sc.parallelize(list(range(4)), 4).foreach(teardown_spark_worker)
 
         if self.args.profile:
             sc.show_profiles()
 
         if self.args.stop_delay:
             try:
+                print()
+                print("Spark job finished! You can still browse the UI " + \
+                      "for %s seconds, or do Ctrl-C to exit." % self.args.stop_delay)
+                print()
                 time.sleep(self.args.stop_delay)
             except KeyboardInterrupt:
                 pass
@@ -202,3 +207,31 @@ class SparkJob(object):
         self.run_job(sc, sqlc)
 
         self.teardown_spark_context(sc, sqlc)
+
+
+class SparkPlugin(Plugin):
+
+    def save_dataframe(self, df, fileformat):
+        """ Saves a dataframe with common options """
+
+        coalesce = int(self.args.get("coalesce", 1) or 0)
+        if coalesce > 0:
+            df = df.coalesce(coalesce)
+
+        if fileformat == "text":
+            df.write.text(
+                self.args["path"],
+                compression="gzip" if self.args.get("gzip") else "none"
+            )
+
+        elif fileformat == "json":
+            df.write.json(
+                self.args["path"],
+                compression="gzip" if self.args.get("gzip") else "none"
+            )
+
+        elif fileformat == "parquet":
+            df.write.parquet(self.args["path"])
+
+        else:
+            raise Exception("Unknown format %s" % fileformat)

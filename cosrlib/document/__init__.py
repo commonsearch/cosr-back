@@ -1,7 +1,9 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import importlib
 import os
 
-from cosrlib import re
+from cosrlib import re, is_basestring
 from cosrlib.url import URL
 
 
@@ -28,7 +30,7 @@ class Document(object):
 
         if not url:
             self.source_url = URL("")
-        elif isinstance(url, basestring):
+        elif is_basestring(url):
             self.source_url = URL(url)
         else:
             self.source_url = url
@@ -112,15 +114,15 @@ class Document(object):
         """ Returns a list of words found in the URL """
         return self.get_domain_words() + self.get_path_words()
 
-    def get_hyperlinks(self):
+    def get_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs found in the document """
         return []
 
-    def get_external_hyperlinks(self):
+    def get_external_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs found in the document """
         return []
 
-    def get_internal_hyperlinks(self):
+    def get_internal_hyperlinks(self, exclude_nofollow=False):
         """ Returns a list of followable URLs found in the document """
         return []
 
@@ -145,10 +147,10 @@ class Document(object):
             urls.append(canonical)
         return urls
 
-    def _split_words(self, text):
+    def _split_words(self, txt):
         """ Simple word tokenization from text. """
         # TODO, make this into a proper tokenizer!
-        return [x for x in _RE_WHITESPLACE.split(text) if x]
+        return [x for x in _RE_WHITESPLACE.split(txt) if x]
 
     def _split_url_words(self, url):
         """ Simple word tokenization from URLs. """

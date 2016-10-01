@@ -11,10 +11,10 @@ import subprocess
 def _validate_txt_graph(webgraph_dir):
 
     # We collect(1) so there should be only one partition
-    webgraph_file = webgraph_dir + "/out/part-00000"
-    assert os.path.isfile(webgraph_file)
+    webgraph_files = [f for f in os.listdir(os.path.join(webgraph_dir, "out")) if f.endswith(".txt")]
+    assert len(webgraph_files) == 1
 
-    with open(webgraph_file, "r") as f:
+    with open(os.path.join(webgraph_dir, "out", webgraph_files[0]), "r") as f:
         graph = [x.split(" ") for x in f.read().strip().split("\n")]
 
     print graph
@@ -29,14 +29,13 @@ def _read_parquet(parquet_path):
     return [json.loads(line) for line in out.strip().split("\n")]
 
 
-@pytest.mark.elasticsearch
-def test_spark_link_graph_txt(indexer, sparksubmit):
+def test_spark_link_graph_txt(sparksubmit):
 
     webgraph_dir = tempfile.mkdtemp()
 
     try:
 
-        sparksubmit("spark/jobs/index.py  --plugin plugins.filter.All:parse=1,index=0  --source wikidata --source corpus:%s  --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source wikidata --source corpus:%s  --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             webgraph_dir
         ))
@@ -57,7 +56,7 @@ def test_spark_link_graph_txt_with_intermediate_dump(sparksubmit):
     try:
 
         # Generate temporary dump
-        sparksubmit("spark/jobs/index.py --source corpus:%s --plugin plugins.filter.All:parse=1,index=0 --plugin plugins.dump.DocumentMetadataParquet:path=%s/intermediate/,abort=1 --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source corpus:%s --plugin plugins.dump.DocumentMetadata:format=parquet,path=%s/intermediate/,abort=1 --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             webgraph_dir,
             webgraph_dir
@@ -70,7 +69,7 @@ def test_spark_link_graph_txt_with_intermediate_dump(sparksubmit):
         print _read_parquet("%s/intermediate/" % webgraph_dir)
 
         # Resume pipeline from that dump
-        sparksubmit("spark/jobs/index.py --source parquet:path=%s/intermediate/ --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/ --plugin plugins.filter.All:parse=1,index=0" % (
+        sparksubmit("spark/jobs/pipeline.py --source metadata:path=%s/intermediate/ --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
             webgraph_dir,
             webgraph_dir
         ))
@@ -81,19 +80,18 @@ def test_spark_link_graph_txt_with_intermediate_dump(sparksubmit):
         shutil.rmtree(webgraph_dir)
 
 
-@pytest.mark.elasticsearch
-def test_spark_link_graph_parquet(indexer, sparksubmit):
+def test_spark_link_graph_parquet(urlclient, sparksubmit):
 
     webgraph_dir = tempfile.mkdtemp()
 
     try:
 
-        domain_a_id = indexer.client.urlclient.get_domain_id("http://example-a.com/")
-        domain_b_id = indexer.client.urlclient.get_domain_id("http://example-b.com/")
-        domain_c_id = indexer.client.urlclient.get_domain_id("http://example-c.com/")
-        domain_d_id = indexer.client.urlclient.get_domain_id("http://example-d.com/")
+        domain_a_id = urlclient.client.get_domain_id("http://example-a.com/")
+        domain_b_id = urlclient.client.get_domain_id("http://example-b.com/")
+        domain_c_id = urlclient.client.get_domain_id("http://example-c.com/")
+        domain_d_id = urlclient.client.get_domain_id("http://example-d.com/")
 
-        sparksubmit("spark/jobs/index.py  --plugin plugins.filter.All:parse=1,index=0 --source corpus:%s  --plugin plugins.webgraph.DomainToDomainParquet:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source corpus:%s  --plugin plugins.webgraph.DomainToDomainParquet:coalesce=1,path=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             webgraph_dir
         ))
