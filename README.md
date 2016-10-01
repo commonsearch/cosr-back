@@ -64,7 +64,7 @@ Common Search supports the insertion of user-provided plugins in the indexation 
 
 ```
 make docker_shell
-spark-submit spark/jobs/pipeline.py --source url:https://about.commonsearch.org/ --plugin plugins.grep.Words:words=common search,path=/tmp/grep_result
+spark-submit spark/jobs/pipeline.py --source url:https://about.commonsearch.org/ --plugin plugins.grep.Words:words="common search",path=/tmp/grep_result
 ```
 
 See the [plugins/](plugins/) directory for more examples.
