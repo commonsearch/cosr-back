@@ -10,9 +10,9 @@ from mprpc import RPCServer
 
 sys.path.insert(-1, os.path.normpath(os.path.join(__file__, "../../")))
 from cosrlib.url import URL
-from .id_generator import make_url_id, make_domain_id
-from .storage import Storage
-from .protos import urlserver_pb2
+from urlserver.id_generator import make_url_id, make_domain_id
+from urlserver.storage import Storage
+from urlserver.protos import urlserver_pb2
 
 db = Storage(read_only=True)
 
