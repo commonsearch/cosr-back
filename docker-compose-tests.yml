@@ -1,0 +1,41 @@
+version: '2'
+services:
+
+  elasticsearch:
+    image: commonsearch/local-elasticsearch
+
+  urlserver:
+    image: commonsearch/local-back
+    command: python urlserver/server.py
+    volumes:
+     - .:/cosr/back:rw
+    working_dir: /cosr/back
+    depends_on:
+     - elasticsearch
+    links:
+     - elasticsearch
+    environment:
+        # Use the elasticsearch instance running the linked container
+      - "COSR_ELASTICSEARCHDOCS=elasticsearch:9200"
+      - "COSR_ELASTICSEARCHTEXT=elasticsearch:9200"
+
+  tester:
+    image: commonsearch/local-back
+    command: make test
+    environment:
+      - "TRAVIS"
+      - "TRAVIS_BRANCH"
+      - "TRAVIS_JOB_ID"
+      - "COSR_ENV"
+      - "TERM=xterm-256color"
+      - "COSR_ELASTICSEARCHDOCS=elasticsearch:9200"
+      - "COSR_ELASTICSEARCHTEXT=elasticsearch:9200"
+    depends_on:
+      - elasticsearch
+      - urlserver
+    links:
+      - elasticsearch
+      - urlserver
+    volumes:
+     - .:/cosr/back:rw
+    working_dir: /cosr/back

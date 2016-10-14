@@ -19,7 +19,6 @@ before_install:
 
   # Start the Elasticsearch service
   - docker pull commonsearch/local-elasticsearch
-  - docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
 
   - ./scripts/git-set-file-times
 
@@ -46,14 +45,6 @@ before_install:
     rm -rf $HOME/.cache/docker/* &&
     sh -c "docker save commonsearch/local-back $(docker history -q commonsearch/local-back | tail -n +2 | grep -v \<missing\> | tr '\n' ' ') | gzip > $HOME/.cache/docker/image.tgz";
     fi
-
-  # Make sure the networking to the container running Elasticsearch is OK
-  - ps -ef
-  - netstat -lpn
-  - docker run commonsearch/local-back ip route show 0.0.0.0/0
-  - docker run commonsearch/local-back cat /etc/hosts
-  - curl "http://127.0.0.1:39200"
-  - docker run -e COSR_ELASTICSEARCHTEXT commonsearch/local-back curl $COSR_ELASTICSEARCHTEXT
 
 script:
   - make docker_pylint
