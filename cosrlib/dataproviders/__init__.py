@@ -62,7 +62,7 @@ class BaseDataProvider(object):
         db = Storage(read_only=False)
 
         write_batch = db.write_batch(None)
-        batch_time = time.time()
+        start_time = time.time()
 
         done = 0
 
@@ -97,17 +97,16 @@ class BaseDataProvider(object):
                     eta = float(
                         self.dump_count_estimate - done
                     ) / (
-                        3600.0 * done / (time.time() - batch_time)
+                        3600.0 * done / (time.time() - start_time)
                     )
 
                 print("Done %s (%s/s, ~%0.2f%%, ETA %0.2fh)" % (
                     done,
-                    int(done / (time.time() - batch_time)),
+                    int(done / (time.time() - start_time)),
                     (float(done * 100) / self.dump_count_estimate) if self.dump_count_estimate else 0,
                     eta
                 ))
                 write_batch = db.write_batch(write_batch)
-                batch_time = time.time()
 
         print("Total rows: %s" % done)
         db.write_batch(write_batch)

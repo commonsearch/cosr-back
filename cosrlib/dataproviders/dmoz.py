@@ -13,7 +13,7 @@ class DataProvider(BaseDataProvider):
     dump_compression = "gz"
     dump_format = "xml"
     dump_batch_size = 100000
-    dump_count_estimate = 3000000
+    dump_count_estimate = 3600000
 
     def import_row(self, i, row):
         """ Returns a (key, value) pair for this row from the dump file """
