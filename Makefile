@@ -185,22 +185,32 @@ docker_explainer:
 # Tests & code quality commands
 #
 
-# Runs all the tests
-test: import_local_testdata
+# Runs all the tests (always from inside the container)
+test: wait_for_elasticsearch import_local_testdata
 	PYTHONDONTWRITEBYTECODE=1 py.test tests -v
 
 # Runs all tests with coverage info
-test_coverage: clean_coverage
+test_coverage: clean_coverage wait_for_elasticsearch
 	COV_CORE_CONFIG=$(PWD)/.coveragerc COV_CORE_DATAFILE=$(PWD)/.coverage COV_CORE_SOURCE=$(PWD)/cosrlib:$(PWD)/urlserver:$(PWD)/spark make import_local_testdata
 	PYTHONDONTWRITEBYTECODE=1 py.test --cov-append --cov=plugins --cov=cosrlib --cov=urlserver --cov=spark --cov-report html --cov-report xml --cov-report term tests/ -v
 	mv .coverage.* .coverage
 	coveralls || true
 
-docker_test:
-	docker run -e TRAVIS -e TRAVIS_BRANCH -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test
+docker_test: docker_compose_prepare_containers
+	docker-compose -f docker-compose-tests.yml -p cosr-tests run tester make test
+	docker-compose -f docker-compose-tests.yml -p cosr-tests down
 
-docker_test_coverage:
-	docker run -e TRAVIS -e TRAVIS_BRANCH -e TRAVIS_JOB_ID -e COSR_ENV -e COSR_ELASTICSEARCHTEXT -e COSR_ELASTICSEARCHDOCS -e "TERM=xterm-256color" --rm -t -v "$(PWD):/cosr/back:rw" -w /cosr/back commonsearch/local-back make test_coverage
+docker_test_coverage: docker_compose_prepare_containers
+	docker-compose -f docker-compose-tests.yml -p cosr-tests run tester make test_coverage
+	docker-compose -f docker-compose-tests.yml -p cosr-tests down
+	
+docker_compose_prepare_containers:
+	mkdir -p local-data/elasticsearch
+	# TODO: check if docker-compose > v1.6 because we use the v2 compose format
+	@docker-compose --version >> /dev/null || { \
+		echo "docker-compose is not installed or is not in path :(\n  You can use 'pip install docker-compose' or see https://docs.docker.com/compose/install/#/install-docker-compose.\n"; \
+		exit 1; \
+	}
 
 pylint:
 	PYTHONPATH=. pylint -j 0 cosrlib urlserver spark explainer plugins
@@ -211,3 +221,7 @@ docker_pylint:
 
 todo:
 	PYTHONPATH=. pylint -j 0 --disable=all --enable=fixme cosrlib urlserver spark explainer plugins
+
+wait_for_elasticsearch:
+	@echo "Waiting for elasticsearch..."
+	while ! curl --output /dev/null --silent --head --fail http://elasticsearch:9200; do sleep 1 && echo -n .; done;
