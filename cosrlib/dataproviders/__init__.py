@@ -71,6 +71,7 @@ class BaseDataProvider(object):
             # TODO: RocksDB merge operator?
             existing_value = db.get(url)
             existing_pb = urlserver_pb2.UrlMetadata()
+
             if existing_value is not None:
                 existing_pb.ParseFromString(existing_value)
             else:
@@ -123,6 +124,9 @@ class BaseDataProvider(object):
         elif self.dump_format == "tsv":
             reader = csv.reader(f, delimiter=b"\t")
 
+        elif self.dump_format == "txt":
+            reader = csv.reader(f, delimiter=b" ")
+
         elif self.dump_format == "xml":
             reader = ElementTree.iterparse(f, events=(b"start", b"end"))
             _, self.xml_root = next(reader)
@@ -150,7 +154,13 @@ class BaseDataProvider(object):
         if config["TESTDATA"] == "1":
             return open(self.dump_testdata, "rb")
         else:
-            f = urllib2.urlopen(self.dump_url)
+            hdr = {
+                'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
+            }
+
+            req = urllib2.Request(self.dump_url, headers=hdr)
+
+            f = urllib2.urlopen(req)
 
             if self.dump_compression == "zip":
 
