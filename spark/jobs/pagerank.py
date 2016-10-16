@@ -66,6 +66,15 @@ class PageRankJob(SparkJob):
         parser.add_argument("--top_diffs", default=0, type=int,
                             help="Print top N pagerank diffs at each stats iteration")
 
+        parser.add_argument("--overwrite", default=False, action="store_true",
+                            help="Overwrite previous output directory.")
+
+    def get_write_mode(self):
+        if self.args.overwrite:
+            return "overwrite"
+        else:
+            return "error"
+
     def run_job(self, sc, sqlc):
 
         self.clean_tmpdir()
@@ -283,11 +292,8 @@ class PageRankJob(SparkJob):
         """, {"names": vertex_df, "ranks": ranks_df})
 
         if self.args.dump:
-
-            final_df.coalesce(1).write.text(
-                self.args.dump,
-                compression="gzip" if self.args.gzip else "none"
-            )
+            final_df.coalesce(1).write.format('text').mode(
+                self.get_write_mode()).save(self.args.dump, compression="gzip" if self.args.gzip else "none")
 
         else:
             print(final_df.rdd.collect())
