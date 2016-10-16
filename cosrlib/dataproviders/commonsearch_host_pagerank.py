@@ -4,7 +4,7 @@ from . import BaseDataProvider
 
 
 class DataProvider(BaseDataProvider):
-    """ Return the Harmonic Centrality score from the WebDataCommons project.
+    """ Return the PageRank score from CommonSearch.
     """
 
     dump_testdata = "tests/testdata/commonsearch_host_pagerank.txt"

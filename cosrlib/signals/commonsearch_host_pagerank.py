@@ -4,8 +4,7 @@ from . import BaseSignal
 
 
 class Signal(BaseSignal):
-    """ Ranking signal based on the Harmonic Centrality domain ranking
-        from the WebDataCommons project.
+    """ Ranking signal based on PageRank from CommonSearch.
     """
 
     def get_value(self, document, url_metadata):
@@ -14,4 +13,4 @@ class Signal(BaseSignal):
         if not rank:
             return None
 
-        return float(rank)
+        return max(0, min(1, float(rank) / 244660.58))

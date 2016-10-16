@@ -10,7 +10,14 @@ from cosrlib.dataproviders import list_dataproviders
 if len(sys.argv) > 1:
     to_import = sys.argv[1:]
 else:
-    to_import = ["alexa_top1m", "ut1_blacklist", "dmoz", "webdatacommons_hc", "commonsearch_host_pagerank", "wikidata"]
+    to_import = [
+        "alexa_top1m",
+        "ut1_blacklist",
+        "dmoz",
+        "webdatacommons_hc",
+        "commonsearch_host_pagerank",
+        "wikidata"
+    ]
 
 dataproviders = list_dataproviders()
 
