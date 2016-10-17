@@ -11,6 +11,7 @@ message UrlMetadata {
 	string wikidata_title = 8;
 	string wikidata_description = 9;
 	int32 wikidata_sitelinks = 10;
+	float commonsearch_host_pagerank = 11;
 }
 
 message UrlId {

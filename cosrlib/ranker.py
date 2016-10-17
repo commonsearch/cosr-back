@@ -36,7 +36,9 @@ class Ranker(object):
             "dmoz_domain": 1,
             "dmoz_url": 1,
 
-            "webdatacommons_hc": 1
+            "webdatacommons_hc": 1,
+
+            "commonsearch_host_pagerank": 1
         }
 
         sum_ranks = 0.

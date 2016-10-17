@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='urlserver.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0furlserver.proto\"\xf3\x01\n\x0bUrlMetadata\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x11\n\tdomain_id\x18\x02 \x01(\x03\x12\x13\n\x0b\x61lexa_top1m\x18\x03 \x01(\x05\x12\x12\n\ndmoz_title\x18\x04 \x01(\t\x12\x18\n\x10\x64moz_description\x18\x05 \x01(\t\x12\x15\n\rut1_blacklist\x18\x06 \x03(\t\x12\x19\n\x11webdatacommons_hc\x18\x07 \x01(\x02\x12\x16\n\x0ewikidata_title\x18\x08 \x01(\t\x12\x1c\n\x14wikidata_description\x18\t \x01(\t\x12\x1a\n\x12wikidata_sitelinks\x18\n \x01(\x05\"\x13\n\x05UrlId\x12\n\n\x02id\x18\x01 \x01(\x03\x62\x06proto3')
+  serialized_pb=_b('\n\x0furlserver.proto\"\x97\x02\n\x0bUrlMetadata\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x11\n\tdomain_id\x18\x02 \x01(\x03\x12\x13\n\x0b\x61lexa_top1m\x18\x03 \x01(\x05\x12\x12\n\ndmoz_title\x18\x04 \x01(\t\x12\x18\n\x10\x64moz_description\x18\x05 \x01(\t\x12\x15\n\rut1_blacklist\x18\x06 \x03(\t\x12\x19\n\x11webdatacommons_hc\x18\x07 \x01(\x02\x12\x16\n\x0ewikidata_title\x18\x08 \x01(\t\x12\x1c\n\x14wikidata_description\x18\t \x01(\t\x12\x1a\n\x12wikidata_sitelinks\x18\n \x01(\x05\x12\"\n\x1a\x63ommonsearch_host_pagerank\x18\x0b \x01(\x02\"\x13\n\x05UrlId\x12\n\n\x02id\x18\x01 \x01(\x03\x62\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -78,7 +78,7 @@ _URLMETADATA = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='webdatacommons_hc', full_name='UrlMetadata.webdatacommons_hc', index=6,
       number=7, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=0,
+      has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -103,6 +103,13 @@ _URLMETADATA = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='commonsearch_host_pagerank', full_name='UrlMetadata.commonsearch_host_pagerank', index=10,
+      number=11, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -116,7 +123,7 @@ _URLMETADATA = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=20,
-  serialized_end=263,
+  serialized_end=299,
 )
 
 
@@ -146,8 +153,8 @@ _URLID = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=265,
-  serialized_end=284,
+  serialized_start=301,
+  serialized_end=320,
 )
 
 DESCRIPTOR.message_types_by_name['UrlMetadata'] = _URLMETADATA
