@@ -66,7 +66,7 @@ clean_coverage:
 # Creates a local Python virtualenv with all required modules installed
 virtualenv:
 	rm -rf venv
-	virtualenv venv --distribute
+	virtualenv -p python2.7 venv --distribute
 
 	# Cython must be installed prior to gumbocy. TODO: how to fix that?
 	grep -i Cython requirements.txt | xargs venv/bin/pip install
