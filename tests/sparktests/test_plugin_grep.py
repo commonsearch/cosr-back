@@ -13,7 +13,7 @@ def test_spark_plugin_grep(sparksubmit):
 
     try:
 
-        sparksubmit("spark/jobs/pipeline.py --source corpus:%s --plugin 'plugins.grep.Words:words=c1 d1 world,path=%s/out/,coalesce=1'" % (
+        sparksubmit("spark/jobs/pipeline.py --source corpus:%s --plugin 'plugins.grep.Words:words=c1 d1 world,output=%s/out/,coalesce=1'" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             tmp_dir
         ))

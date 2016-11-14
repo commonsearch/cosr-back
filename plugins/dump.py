@@ -11,8 +11,8 @@ class DocumentMetadata(SparkPlugin):
     """ Stores intermediate documents in parquet format """
 
     def init(self):
-        if self.args.get("path") and os.path.isdir(self.args["path"]):
-            shutil.rmtree(self.args["path"])
+        if self.args.get("output") and os.path.isdir(self.args["output"]):
+            shutil.rmtree(self.args["output"])
 
         self.format = self.args.get("format") or "parquet"
 

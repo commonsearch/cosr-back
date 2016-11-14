@@ -63,7 +63,7 @@ def test_source_commoncrawl(sparksubmit):
         sparksubmit(
             """spark/jobs/pipeline.py \
             --source commoncrawl:limit=2,maxdocs=3 \
-            --plugin plugins.dump.DocumentMetadata:format=json,path=%s/intermediate/ """ % (
+            --plugin plugins.dump.DocumentMetadata:format=json,output=%s/intermediate/ """ % (
                 tmp_dir
             )
         )
@@ -90,7 +90,7 @@ def test_source_commoncrawl(sparksubmit):
         sparksubmit(
             """spark/jobs/pipeline.py \
             --source metadata:format=json,path=%s/intermediate/ \
-            --plugin plugins.dump.DocumentMetadata:format=parquet,path=%s/intermediate2/ """ % (
+            --plugin plugins.dump.DocumentMetadata:format=parquet,output=%s/intermediate2/ """ % (
                 tmp_dir, tmp_dir
             )
         )

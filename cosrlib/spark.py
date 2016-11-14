@@ -220,18 +220,18 @@ class SparkPlugin(Plugin):
 
         if fileformat == "text":
             df.write.text(
-                self.args["path"],
+                self.args["output"],
                 compression="gzip" if self.args.get("gzip") else "none"
             )
 
         elif fileformat == "json":
             df.write.json(
-                self.args["path"],
+                self.args["output"],
                 compression="gzip" if self.args.get("gzip") else "none"
             )
 
         elif fileformat == "parquet":
-            df.write.parquet(self.args["path"])
+            df.write.parquet(self.args["output"])
 
         else:
             raise Exception("Unknown format %s" % fileformat)

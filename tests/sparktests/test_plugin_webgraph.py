@@ -35,7 +35,7 @@ def test_spark_link_graph_txt(sparksubmit):
 
     try:
 
-        sparksubmit("spark/jobs/pipeline.py --source wikidata --source corpus:%s  --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source wikidata --source corpus:%s  --plugin plugins.webgraph.DomainToDomain:coalesce=1,output=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             webgraph_dir
         ))
@@ -56,7 +56,7 @@ def test_spark_link_graph_txt_with_intermediate_dump(sparksubmit):
     try:
 
         # Generate temporary dump
-        sparksubmit("spark/jobs/pipeline.py --source corpus:%s --plugin plugins.dump.DocumentMetadata:format=parquet,path=%s/intermediate/,abort=1 --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source corpus:%s --plugin plugins.dump.DocumentMetadata:format=parquet,output=%s/intermediate/,abort=1 --plugin plugins.webgraph.DomainToDomain:coalesce=1,output=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             webgraph_dir,
             webgraph_dir
@@ -69,7 +69,7 @@ def test_spark_link_graph_txt_with_intermediate_dump(sparksubmit):
         print _read_parquet("%s/intermediate/" % webgraph_dir)
 
         # Resume pipeline from that dump
-        sparksubmit("spark/jobs/pipeline.py --source metadata:path=%s/intermediate/ --plugin plugins.webgraph.DomainToDomain:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source metadata:path=%s/intermediate/ --plugin plugins.webgraph.DomainToDomain:coalesce=1,output=%s/out/" % (
             webgraph_dir,
             webgraph_dir
         ))
@@ -91,7 +91,7 @@ def test_spark_link_graph_parquet(urlclient, sparksubmit):
         domain_c_id = urlclient.client.get_domain_id("http://example-c.com/")
         domain_d_id = urlclient.client.get_domain_id("http://example-d.com/")
 
-        sparksubmit("spark/jobs/pipeline.py --source corpus:%s  --plugin plugins.webgraph.DomainToDomainParquet:coalesce=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source corpus:%s  --plugin plugins.webgraph.DomainToDomainParquet:coalesce=1,output=%s/out/" % (
             pipes.quote(json.dumps(CORPUSES["simple_link_graph_domain"])),
             webgraph_dir
         ))

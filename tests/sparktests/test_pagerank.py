@@ -143,14 +143,30 @@ GRAPHS = {
 
 }
 
-DEFAULT_MAXITER = 100
-DEFAULT_TOL = 0
+IMPLEMENTATIONS = {
+    "sparksql": {
+        "default_maxiter": 100,
+        "default_tol": 0
+    },
+    "graphframes": {
+        "default_maxiter": 100,
+        "default_tol": 0
+    },
+    "rdd": {
+        "default_maxiter": 100,
+        "default_tol": 0
+    }
+}
 
 
 # Skipped until https://issues.apache.org/jira/browse/SPARK-16802 is fixed
 @pytest.mark.skip
-@pytest.mark.parametrize(("p_graph_name"), sorted(GRAPHS.keys()))
-def test_pagerank_computation(p_graph_name, sparksubmit):
+@pytest.mark.parametrize(("p_graph_name", "p_implementation"), [
+    (graph_name, implementation)
+    for graph_name in sorted(GRAPHS.keys())
+    for implementation in sorted(IMPLEMENTATIONS.keys())
+])
+def test_pagerank_computation(p_graph_name, p_implementation, sparksubmit):
 
     p_graph = GRAPHS[p_graph_name]
 
@@ -162,8 +178,8 @@ def test_pagerank_computation(p_graph_name, sparksubmit):
         for name, data in p_graph["graph"].iteritems()
     ]}
 
-    maxiter = p_graph.get("maxiter", DEFAULT_MAXITER)
-    tol = p_graph.get("tol", DEFAULT_TOL)
+    maxiter = p_graph.get("maxiter", IMPLEMENTATIONS[p_implementation]["default_maxiter"])
+    tol = p_graph.get("tol", IMPLEMENTATIONS[p_implementation]["default_tol"])
 
     webgraph_dir = tempfile.mkdtemp()
 
@@ -173,14 +189,14 @@ def test_pagerank_computation(p_graph_name, sparksubmit):
         with open(corpus_file, "w") as f:
             f.write(json.dumps(corpus["docs"]))
 
-        sparksubmit("spark/jobs/pipeline.py --source corpus:path=%s,persist=1 --plugin plugins.webgraph.DomainToDomainParquet:coalesce=4,shuffle_partitions=1,path=%s/out/" % (
+        sparksubmit("spark/jobs/pipeline.py --source corpus:path=%s,persist=1 --plugin plugins.webgraph.DomainToDomainParquet:coalesce=4,shuffle_partitions=1,output=%s/out/" % (
             corpus_file,
             webgraph_dir
         ))
 
         # Now compute page rank on the domain graph!
-        sparksubmit("spark/jobs/pagerank.py --webgraph %s/out/ --dump %s/out/pagerank/  --maxiter %s --shuffle_partitions 4 --tol %s --stats 1 --include_orphans" % (
-            webgraph_dir,
+        sparksubmit("spark/jobs/pagerank.py --implementation %s --webgraph %s/out/ --output %s/out/pagerank/  --maxiter %s --shuffle_partitions 4 --tol %s --stats 1 --include_orphans" % (
+            p_implementation,
             webgraph_dir,
             webgraph_dir,
             maxiter,
@@ -188,7 +204,8 @@ def test_pagerank_computation(p_graph_name, sparksubmit):
         ))
 
         # We collect(1) so there should be only one partition
-        txtfiles = [x for x in os.listdir(webgraph_dir + "/out/pagerank/") if x.endswith(".txt")]
+        txtfiles = [x for x in os.listdir(webgraph_dir + "/out/pagerank/") if x.startswith("part-")]
+
         assert len(txtfiles) == 1
         pr_file = webgraph_dir + "/out/pagerank/" + txtfiles[0]
         assert os.path.isfile(pr_file)

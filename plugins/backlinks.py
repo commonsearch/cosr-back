@@ -17,7 +17,7 @@ class MostExternallyLinkedPages(SparkPlugin):
             # TODO: link text
         ])), nullable=True))
 
-        final_directory = self.args["path"]
+        final_directory = self.args["output"]
         if final_directory and os.path.isdir(final_directory):
             shutil.rmtree(final_directory)
 

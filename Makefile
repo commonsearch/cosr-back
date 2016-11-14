@@ -92,15 +92,10 @@ devindex: restart_services
 #
 
 # Logins into a new container
-docker_shell: docker_check
-	@# Check if a container is already using port 4040
-	@bash -c "if [ -z '`docker ps -q | xargs -n1 docker port | grep ':4040$$'`' ]; then make docker_shell_with_ports; else make docker_shell_no_ports; fi"
-
-docker_shell_with_ports:
-	docker run -p 4040:4040 -p 4041:4041 -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
-
-docker_shell_no_ports:
-	docker run -p 4040 -p 4041 -v "$(PWD):/cosr/back:rw" -w /cosr/back -i -t commonsearch/local-back bash
+docker_shell: docker_check docker_compose_prepare_containers
+	docker-compose -p cosrbackshell down 2>/dev/null || true
+	docker-compose -p cosrbackshell run --rm --service-ports cosrback bash
+	docker-compose -p cosrbackshell down
 
 # Logins into the same container again
 docker_reshell:
@@ -122,23 +117,6 @@ docker_check:
 start_local_elasticsearch:
 	# sudo ifconfig lo0 alias 10.0.2.2
 	elasticsearch -Dhttp.port=39200 -Dcluster.routing.allocation.disk.threshold_enabled=false -Dnetwork.host=0.0.0.0 -Dnode.local=true -Ddiscovery.zen.ping.multicast.enabled=false -Dnetwork.publish_host=10.0.2.2
-
-# Starts local services
-start_services:
-	mkdir -p local-data/elasticsearch
-
-	# ElasticSearch
-	docker run -d -p 39200:9200 -p 39300:9300 commonsearch/local-elasticsearch
-
-	# URLServer
-	docker run -d -v "$(PWD):/cosr/back:rw" -w /cosr/back -p 9702:9702 commonsearch/local-back python urlserver/server.py
-
-# Stops local services
-stop_services:
-	bash -c 'docker ps | tail -n +2 | grep -E "((commonsearch/local-elasticsearch)|(urlserver))" | cut -d " " -f 1 | xargs docker stop -t=0'
-
-# Restarts local services
-restart_services: stop_services start_services
 
 # Reindex 1 WARC file from Common Crawl
 reindex1:
@@ -197,16 +175,18 @@ test_coverage: clean_coverage wait_for_elasticsearch
 	coveralls || true
 
 docker_test: docker_compose_prepare_containers
-	docker-compose -f docker-compose-tests.yml -p cosr-tests run tester make test
-	docker-compose -f docker-compose-tests.yml -p cosr-tests down
+	docker-compose -p cosr-tests down 2>/dev/null || true
+	docker-compose -p cosr-tests run --rm cosrback make test
+	docker-compose -p cosr-tests down
 
 docker_test_coverage: docker_compose_prepare_containers
-	docker-compose -f docker-compose-tests.yml -p cosr-tests run tester make test_coverage
-	docker-compose -f docker-compose-tests.yml -p cosr-tests down
-	
+	docker-compose -p cosr-tests run --rm cosrback make test_coverage
+	docker-compose -p cosr-tests down 2>/dev/null || true
+	docker-compose -p cosr-tests down
+
+# TODO: check if docker-compose > v1.6 because we use the v2 compose format
 docker_compose_prepare_containers:
 	mkdir -p local-data/elasticsearch
-	# TODO: check if docker-compose > v1.6 because we use the v2 compose format
 	@docker-compose --version >> /dev/null || { \
 		echo "docker-compose is not installed or is not in path :(\n  You can use 'pip install docker-compose' or see https://docs.docker.com/compose/install/#/install-docker-compose.\n"; \
 		exit 1; \

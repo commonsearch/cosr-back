@@ -19,9 +19,9 @@ services:
       - "COSR_ELASTICSEARCHDOCS=elasticsearch:9200"
       - "COSR_ELASTICSEARCHTEXT=elasticsearch:9200"
 
-  tester:
+  cosrback:
     image: commonsearch/local-back
-    command: make test
+    command: bash
     environment:
       - "TRAVIS"
       - "TRAVIS_BRANCH"

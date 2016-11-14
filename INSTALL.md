@@ -34,51 +34,14 @@ make docker_pull
 
 Linux users: depending on your Docker install you make get a permission error with the command above. To fix it you should prefix all the docker commands by `sudo`, for instance: `sudo make docker_pull`.
 
-Now you have a local copy of the code and of the Docker images on your machine!
+Now you have a local copy of the code and of the Docker images on your machine. Congratulations!
 
 
 
-## 3. Optional: Run the tests
+## 3. What to do next
 
-To make sure everything is okay, you can try to run the tests! See our [README.md](/README.md) for instructions.
+You can now:
 
-
-## 4. Optional: Index your first Common Crawl segment
-
-### Background on the Common Crawl Dataset
-
-Common Crawl takes a **snapshot** of the internet approximately every month.  Since all of the data is very, very, large the data is split up into **segments**.  All of these segments are hosted on by Amazon S3 as a part of their Public Datasets program.
-
-If you're curious where you can find the URL's to the segments, visit the [Common Crawl Website](http://commoncrawl.org/the-data/get-started/).  If you click on a specific month, you can find a link to download all of the WARC paths.  Each path inside of this WARC paths file is a link to a Common Crawl Segment.  **Don't worry, cosr-back makes it easy to download segments from Common Crawl ... we will help you download your first segment in the section below.**
-
-Note: While experimenting locally, as a general practice, it is recommended to limit the number of segment URL's that you are processing from to 1 or 2, to avoid overloading your own computer.  Each segment can be ~ 500 mb or more.
-
-### Indexing your first Segment
-
-Let's play with real data! We provide an easy way to index a single Common Crawl segment.
-
-Switch into your account on the Docker machine by entering:
-
-```
-make docker_shell
-```
-
-Let's import some static ranking data first:
-
-```
-make import_local_data
-```
-
-Then you should start the local services like Elasticsearch and the URLserver:
-
-```
-make start_services
-```
-
-Finally, you should be able to download (500MB+) and index the first Common Crawl segment:
-
-```
-make reindex1
-```
-
-Congratulations! You should now be able to start diving further in the code of `cosr-back`.
+ - **Launch our test suite**, to make sure your install is working fine. See [tests/README.md](tests/README.md) for instructions.
+ - **Run your first job** to analyze or index the data from Common Crawl. See our [tutorial](https://about.commonsearch.org/developer/tutorials/analyzing-the-web-with-spark-on-ec2).
+ - **Contribute your first patch**, see [Developers: Get started](https://about.commonsearch.org/developer/get-started).

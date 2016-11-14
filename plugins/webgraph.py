@@ -64,11 +64,11 @@ class WebGraphPlugin(SparkPlugin):
 
         self.exclude_nofollow = (self.args.get("include_nofollow") != "1")
 
-        if self.args.get("path"):
-            if os.path.isdir(os.path.join(self.args["path"], "edges")):
-                shutil.rmtree(os.path.join(self.args["path"], "edges"))
-            if os.path.isdir(os.path.join(self.args["path"], "vertices")):
-                shutil.rmtree(os.path.join(self.args["path"], "vertices"))
+        if self.args.get("output"):
+            if os.path.isdir(os.path.join(self.args["output"], "edges")):
+                shutil.rmtree(os.path.join(self.args["output"], "edges"))
+            if os.path.isdir(os.path.join(self.args["output"], "vertices")):
+                shutil.rmtree(os.path.join(self.args["output"], "vertices"))
 
 
 class DomainToDomain(WebGraphPlugin):
@@ -159,7 +159,7 @@ class DomainToDomainParquet(WebGraphPlugin):
         if coalesce > 0:
             vertex_df = vertex_df.coalesce(coalesce)
 
-        vertex_df.write.parquet(os.path.join(self.args["path"], "vertices"))
+        vertex_df.write.parquet(os.path.join(self.args["output"], "vertices"))
 
     def save_edge_graph(self, sqlc, df):
         """ Transforms a document metadata DataFrame into a Parquet dump of the edges of the webgraph """
@@ -227,4 +227,4 @@ class DomainToDomainParquet(WebGraphPlugin):
         if coalesce > 0:
             weighted_edge_df = weighted_edge_df.coalesce(coalesce)
 
-        weighted_edge_df.write.parquet(os.path.join(self.args["path"], "edges"))
+        weighted_edge_df.write.parquet(os.path.join(self.args["output"], "edges"))

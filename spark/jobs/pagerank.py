@@ -45,8 +45,8 @@ class PageRankJob(SparkJob):
         parser.add_argument("--maxvertices", default=0, type=int,
                             help="Maximum number of vertices to consider")
 
-        parser.add_argument("--dump", default=None, type=str,
-                            help="Directory for storing list of pageranks by domain")
+        parser.add_argument("--output", default=None, type=str,
+                            help="Directory for storing the output files")
 
         parser.add_argument("--include_orphans", default=False, action="store_true",
                             help="Add orphan vertices, not linked to by any other one.")
@@ -69,6 +69,9 @@ class PageRankJob(SparkJob):
         parser.add_argument("--overwrite", default=False, action="store_true",
                             help="Overwrite previous output directory.")
 
+        parser.add_argument("--implementation", default="sparksql", action="store",
+                            help="PageRank implementation to use. Available: sparksql, sparksql_alt, graphframes, rdd.")
+
     def get_write_mode(self):
         if self.args.overwrite:
             return "overwrite"
@@ -81,9 +84,10 @@ class PageRankJob(SparkJob):
 
         try:
 
-            self.custom_pagerank(sc, sqlc)
-            # self.custom_pagerank_2(sc, sqlc)
-            # self.graphframes_pagerank(sc, sqlc)
+            method = getattr(self, "pagerank_%s" % self.args.implementation)
+
+            method(sc, sqlc)
+
         finally:
             self.clean_tmpdir()
 
@@ -129,7 +133,7 @@ class PageRankJob(SparkJob):
                 print("Waiting for %s ..." % _success)
                 time.sleep(10)
 
-    def custom_pagerank(self, sc, sqlc):
+    def pagerank_sparksql(self, sc, sqlc):
         """ Our own PageRank implementation, based on Spark SQL and Pregel-like behaviour """
         # pylint: disable=too-many-statements
 
@@ -291,14 +295,14 @@ class PageRankJob(SparkJob):
             ORDER BY ranks.rank DESC
         """, {"names": vertex_df, "ranks": ranks_df})
 
-        if self.args.dump:
+        if self.args.output:
             final_df.coalesce(1).write.format('text').mode(
-                self.get_write_mode()).save(self.args.dump, compression="gzip" if self.args.gzip else "none")
+                self.get_write_mode()).save(self.args.output, compression="gzip" if self.args.gzip else "none")
 
         else:
             print(final_df.rdd.collect())
 
-    def custom_pagerank_2(self, sc, sqlc):
+    def pagerank_sparksql_alt(self, sc, sqlc):
         """ Alternative PageRank implementation, with fixed number of steps """
 
         sc.setCheckpointDir("/tmp/spark-checkpoints")
@@ -422,17 +426,17 @@ class PageRankJob(SparkJob):
             ORDER BY ranks.rank DESC
         """, {"names": vertex_df, "ranks": ranks_df})
 
-        if self.args.dump:
+        if self.args.output:
 
             final_df.coalesce(1).write.text(
-                self.args.dump,
+                self.args.output,
                 compression="gzip" if self.args.gzip else "none"
             )
 
         else:
             print(final_df.rdd.collect())
 
-    def graphframes_pagerank(self, sc, sqlc):
+    def pagerank_graphframes(self, sc, sqlc):
         """ GraphFrame's PageRank implementation """
 
         from graphframes import GraphFrame  # pylint: disable=import-error
@@ -442,23 +446,70 @@ class PageRankJob(SparkJob):
 
         graph = GraphFrame(vertex_df, edge_df)
 
-        withPageRank = graph.pageRank(maxIter=self.args.maxiter)
+        ranked_graph = graph.pageRank(maxIter=self.args.maxiter)
 
         final_df = sql(sqlc, """
             SELECT CONCAT(ranks.domain, ' ', ranks.pagerank) r
             FROM ranks
             ORDER BY ranks.pagerank DESC
-        """, {"ranks": withPageRank.vertices})
+        """, {"ranks": ranked_graph.vertices})
 
-        if self.args.dump:
+        if self.args.output:
 
             final_df.coalesce(1).write.text(
-                self.args.dump,
+                self.args.output,
                 compression="gzip" if self.args.gzip else "none"
             )
 
         else:
             print(final_df.rdd.collect())
+
+    def pagerank_rdd(self, sc, sqlc):
+        """ Naive Spark RDD PageRank implementation.
+
+            See https://github.com/apache/spark/blob/master/examples/src/main/python/pagerank.py
+        """
+
+        from operator import add
+
+        def compute_contribs(urls, rank):
+            """Calculates URL contributions to the rank of other URLs."""
+            num_urls = len(urls)
+            for url in urls:
+                yield (url, rank / num_urls)
+
+        labels = sqlc.read.load(os.path.join(self.args.webgraph, "vertices")).rdd
+        lines = sqlc.read.load(os.path.join(self.args.webgraph, "edges")).rdd
+
+        # Loads all URLs from input file and initialize their neighbors.
+        links = lines.map(lambda row: (row.src, row.dst)).distinct().groupByKey().mapValues(list).cache()
+
+        # Loads all URLs with other URL(s) link to from input file and initialize ranks of them to one.
+        ranks = links.map(lambda url_neighbors: (url_neighbors[0], 1.0))
+
+        # Calculates and updates URL ranks continuously using PageRank algorithm.
+        for iteration in range(self.args.maxiter):
+
+            # Calculates URL contributions to the rank of other URLs.
+            contribs = links.join(ranks).flatMap(
+                lambda url_urls_rank: compute_contribs(url_urls_rank[1][0], url_urls_rank[1][1]))
+
+            # Re-calculates URL ranks based on neighbor contributions.
+            ranks = contribs.reduceByKey(add).mapValues(lambda rank: rank * 0.85 + 0.15)
+
+        # Restores the labels from the vertices file
+        labelled_ranks = labels.leftOuterJoin(ranks).map(
+            lambda row: "%s %s" % (row[1][0], row[1][1] or 0.15)
+        )
+
+        if self.args.output:
+
+            labelled_ranks.coalesce(1).saveAsTextFile(
+                self.args.output
+            )
+
+        else:
+            print(labelled_ranks.collect())
 
 if __name__ == "__main__":
     job = PageRankJob()
