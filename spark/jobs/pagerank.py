@@ -70,7 +70,8 @@ class PageRankJob(SparkJob):
                             help="Overwrite previous output directory.")
 
         parser.add_argument("--implementation", default="sparksql", action="store",
-                            help="PageRank implementation to use. Available: sparksql, sparksql_alt, graphframes, rdd.")
+                            help="PageRank implementation to use. " +
+                            "Available: sparksql, sparksql_alt, graphframes, rdd.")
 
     def get_write_mode(self):
         if self.args.overwrite:
@@ -296,8 +297,10 @@ class PageRankJob(SparkJob):
         """, {"names": vertex_df, "ranks": ranks_df})
 
         if self.args.output:
-            final_df.coalesce(1).write.format('text').mode(
-                self.get_write_mode()).save(self.args.output, compression="gzip" if self.args.gzip else "none")
+            final_df.coalesce(1).write \
+                .format('text') \
+                .mode(self.get_write_mode()) \
+                .save(self.args.output, compression="gzip" if self.args.gzip else "none")
 
         else:
             print(final_df.rdd.collect())
@@ -488,7 +491,7 @@ class PageRankJob(SparkJob):
         ranks = links.map(lambda url_neighbors: (url_neighbors[0], 1.0))
 
         # Calculates and updates URL ranks continuously using PageRank algorithm.
-        for iteration in range(self.args.maxiter):
+        for _ in range(self.args.maxiter):
 
             # Calculates URL contributions to the rank of other URLs.
             contribs = links.join(ranks).flatMap(

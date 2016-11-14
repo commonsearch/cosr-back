@@ -192,6 +192,8 @@ docker_compose_prepare_containers:
 		exit 1; \
 	}
 
+lint: pylint
+
 pylint:
 	PYTHONPATH=. pylint -j 0 cosrlib urlserver spark explainer plugins
 	PYTHONPATH=. pylint --py3k -j 0 cosrlib urlserver spark explainer plugins
