@@ -40,9 +40,9 @@ class MostExternallyLinkedPages(SparkPlugin):
                 CONCAT(
                     regexp_replace(url_to, "^http(s?)://", ""),
                     " ",
-                    COUNT(*),
+                    SIZE(COLLECT_SET(url_from)),
                     " ",
-                    CONCAT_WS(" ", COLLECT_LIST(url_from))
+                    CONCAT_WS(" ", COLLECT_SET(url_from))
                 ) r
             FROM (
                 SELECT url url_from, EXPLODE(external_links.href) url_to
