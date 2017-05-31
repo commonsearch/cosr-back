@@ -52,22 +52,22 @@ def make_subdomain_id(url):
     return mmh3.hash(url.normalized_subdomain)
 
 
-def _fast_make_domain_id(domain):
-    """ Experimental fast version bypassing cosrlib.URL """
+def _fast_make_domain_id(host):
+    """ Experimental fast version bypassing cosrlib.URL
+        Note: not compatible with make_domain_id"""
 
-    if domain not in URL_DOMAIN_IDS_CACHE:
+    if host not in URL_DOMAIN_IDS_CACHE:
 
-        subdomain, domain, suffix = tld_extract(domain)
+        subdomain, domain, suffix = tld_extract(host)
 
         if subdomain == "www" or not subdomain:
-            URL_DOMAIN_IDS_CACHE[domain] = mmh3.hash("%s.%s" % (domain, suffix))
+            URL_DOMAIN_IDS_CACHE[host] = \
+                mmh3.hash64("%s.%s" % (domain, suffix))[0]
         else:
             while subdomain.startswith("www."):
                 subdomain = subdomain[4:]
 
-            URL_DOMAIN_IDS_CACHE[domain] = (
-                (mmh3.hash(subdomain) << 32) +
-                mmh3.hash("%s.%s" % (domain, suffix))
-            )
+            URL_DOMAIN_IDS_CACHE[host] = \
+                mmh3.hash64("%s.%s.%s" % (subdomain, domain, suffix))[0]
 
-    return URL_DOMAIN_IDS_CACHE[domain]
+    return URL_DOMAIN_IDS_CACHE[host]
